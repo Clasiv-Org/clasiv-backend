@@ -5,13 +5,16 @@ import { google } from "googleapis";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3000;
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const REDIRECT_URI = process.env.REDIRECT_URI;
 const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
-const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 const SHARED_DRIVE_ID = process.env.SHARED_DRIVE_ID;
+
+if (!CLIENT_ID || !CLIENT_SECRET || !REDIRECT_URI || !REFRESH_TOKEN) {
+	throw new Error("Missing required environment variables");
+}
 
 const oAuth2Client = new google.auth.OAuth2(
 	CLIENT_ID,
@@ -20,7 +23,6 @@ const oAuth2Client = new google.auth.OAuth2(
 );
 
 oAuth2Client.setCredentials({
-    access_token: ACCESS_TOKEN,
     refresh_token: REFRESH_TOKEN
 });
 
@@ -29,15 +31,23 @@ const drive = google.drive({
 	auth: oAuth2Client,
 });
 
-const listFiles = async (folderID: string|undefined) => {
+const listFiles = async (folderID: string) => {
+	if(!folderID){
+        throw new Error("Folder ID is required");
+    }
+
 	const fileRes = await drive.files.list({
 		q: `'${folderID}' in parents and trashed = false`,
 		fields: "files(id, name, mimeType)",
 	});
 
-    return fileRes.data.files;
+    return fileRes.data.files ?? [];
 }
 app.get("/list-files", async (req: Request, res: Response) => {
+	if(!SHARED_DRIVE_ID){
+        throw new Error("Shared Drive ID is required");
+	}
+
     try{
         const files = await listFiles(SHARED_DRIVE_ID);
         res.json(files);
@@ -76,9 +86,6 @@ app.get('/oauth2callback', async (req: Request, res: Response) => {
 		const { tokens } = await oAuth2Client.getToken(code);
 		oAuth2Client.setCredentials(tokens);
 
-		console.log("Access Token:", tokens.access_token);
-		console.log("Refresh Token:", tokens.refresh_token);
-
 		res.send("Login successful! Tokens received. Check logs.");
 	} catch (error) {
 		console.error("Error getting tokens:", error);
@@ -87,5 +94,5 @@ app.get('/oauth2callback', async (req: Request, res: Response) => {
 });
 
 app.listen(PORT, () => {
-	console.log(`Server running at http://localhost:${PORT}`);
+	console.log(`Server running on port ${PORT}`);
 });
