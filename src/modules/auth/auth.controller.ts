@@ -13,24 +13,24 @@ export const register = async (req: Request, res: Response) => {
 
 export const registerVerification = async (req: Request, res: Response) => {
     try {
-        const { email, otp } = req.body;
-        const { user, token } = await authService.registerVerification(email, otp);
+        const { roll_no, email, otp } = req.body;
+        const { user, token } = await authService.registerVerification(roll_no, email, otp);
         res.status(201).json({ 
-			message: "Account created successfully!" ,
+			message: "Account registered successfully!" ,
 			user,
 			token
 		});
     } catch (error) {
-        res.status(500).send("Error creating account!");
+        res.status(500).send("Error registering account!");
     }
 }
 
 export const login = async (req: Request, res: Response) => {
 	try {
-		const { id, email } = req.body;
-		const token = await authService.login(id, email);
+		const { email } = req.body;
+		const token = await authService.login(email);
 		res.status(201).json(token);
 	} catch (error) {
 		res.status(500).send("Error getting user");
 	}
-};
+}
