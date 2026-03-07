@@ -6,64 +6,61 @@ import { sendEmail } from "@/utils/email";
 
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET as string;
+const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET as string;
 
-if(!JWT_SECRET){
-    throw new Error("JWT_SECRET is not defined");
+if(!ACCESS_TOKEN_SECRET || !REFRESH_TOKEN_SECRET){
+    throw new Error("Missing JWT credentials");
 }
 
 export const register = async (roll_no: string, email: string) => {
-	const { data, error } = await authRepository.getUserByRoll(roll_no);
+	const { data: user, error } = await authRepository.getUserByRoll(roll_no);
 	if(error){
         throw new Error("Error getting user");
     }
-	if(!data){
+	if(!user){
 		throw new Error("User not found");
 	}
-    if(data.email_id === email){
+    if(user.email_id){
         throw new Error("User is already registered");
-    }
-	if(data.email_id !== email && data.email_id){
-        throw new Error("Invalid Credentials");
     }
 
 	const otp = generateOtp();
 	const otpHash = hashOtp(otp);
 
     await authRepository.setOtpStatus(
-		data.id, 
+		user.id, 
 		email, 
 		otpHash, 
-		setOtpExpiry()
 	);
 
-	await sendEmail(data.name, email, otp);
+	await sendEmail(user.full_name, email, otp);
 	return;
 }
 
-export const registerVerification = async (email: string, otp: string) => {
-    const { data, error } = await authRepository.getOtpStatus(email);
-    if(error){
-        throw new Error(error.message);
+export const registerVerification = async (roll_no: string, email: string, otp: string) => {
+    const { data: otpData, error: otpErr } = await authRepository.getOtpStatus(email);
+    if(otpErr){
+        throw new Error(otpErr.message);
     }
-    if(!data){
+    if(!otpData){
         throw new Error("User not found");
     }
-	if(data.attempts > 5){
+	if(otpData.otp_attempts > otpData.max_otp_attempts){
         throw new Error("OTP limit exceeded");
 	}
-	if(isOtpExpired(data.expires_at)){
+	if(otpData.created_at < otpData.expires_at){
         throw new Error("OTP expired");
 	}
 
-	const isValid = verifyOTP(otp, data.hashed_otp);
+	const isValid = verifyOTP(otp, otpData.hashed_otp);
     if(!isValid){
-        await authRepository.updateOtpStatus(email, ++data.attempts, false);
+        await authRepository.updateOtpStatus(email, ++otpData.attempts, false);
         throw new Error("Invalid OTP");
     }
 
-    await authRepository.updateOtpStatus(email, ++data.attempts, true);
-	const { data: user, error: userError } = await authRepository.activeUser(data.user_id, email);
+    await authRepository.updateOtpStatus(email, ++otpData.attempts, true);
+	const { data: user, error: userError } = await authRepository.registerUser(roll_no, email);
     if(userError){
         throw new Error(userError.message);
     }
@@ -71,45 +68,45 @@ export const registerVerification = async (email: string, otp: string) => {
         throw new Error("User not found");
     }
 	await authRepository.deleteOtpStatus(email);
-	const token = jwt.sign(
+	const refreshToken = jwt.sign(
 		{
             id: user.id,
-            email: user.email_id
+            base_role: user.base_role
 		},
-		JWT_SECRET ,
-		{expiresIn: "10m"}
+		REFRESH_TOKEN_SECRET,
+		{expiresIn: "30d"}
+	);
+	const accessToken = jwt.sign(
+		{
+            id: user.id,
+			role: user.base_role,
+			role_extentions: [user.base_role]
+		},
+		ACCESS_TOKEN_SECRET,
+		{expiresIn: "30m"}
 	);
 
-    return { user, token };
+    return { user, token: { accessToken, refreshToken } };
 }
 
-export const login = async (id: number, email: string) => {
-	console.log("Login called");
-	console.log(id, email);
-	const { data, error } = await authRepository.getUserById(id);
+export const login = async (email: string) => {
+	const { data: user, error } = await authRepository.getUserByEmail(email);
 	if(error){
 		throw new Error(error.message);
 	}
-	if(!data){
-		throw new Error("User not found");
-	}
-	if(!data.email_id || data.email_id !== email){
+	if(!user){
 		throw new Error("User is not Resgistered");
 	}
 
-	const user = {
-		id: data.id,
-		email: data.email_id,
-	};
+	const otp = generateOtp();
+	const otpHash = hashOtp(otp);
 
-	const token = jwt.sign(
-		{
-            id: data.id,
-            email: data.email_id
-		},
-		JWT_SECRET ,
-		{expiresIn: "10m"}
+    await authRepository.setOtpStatus(
+		user.id, 
+		email, 
+		otpHash, 
 	);
 
-	return token;
-};
+	await sendEmail(user.full_name, email, otp);
+	return;
+}
