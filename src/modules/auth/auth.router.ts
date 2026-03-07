@@ -1,11 +1,25 @@
 import { Router } from "express";
-import * as authValidator from "@/middleware/auth.validator";
-import { login, register, registerVerification } from "@/modules/auth/auth.controller";
+import emailValidator from "@/middleware/email.middleware";
+import rollValidator from "@/middleware/rollNo.middleware";
+import otpValidator from "@/middleware/otp.middleware";
+import * as userController from "@/modules/auth/auth.controller";
 
 const router = Router();
 
-router.post("/register", authValidator.register, register);
-router.post("/register/verification", authValidator.registerVerification, registerVerification);
-router.post("/login", authValidator.login, login);
+router.post("/register", 
+	emailValidator, 
+	rollValidator, 
+	userController.register
+);
+router.post("/register/verification", 
+	emailValidator, 
+	rollValidator, 
+	otpValidator, 
+	userController.registerVerification
+);
+router.post("/login", 
+	emailValidator, 
+	userController.login
+);
 
 export default router;
