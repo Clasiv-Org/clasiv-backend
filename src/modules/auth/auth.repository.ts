@@ -15,43 +15,29 @@ const supabase = createClient(
     SUPABASE_KEY as string
 );
 
-export const getUserById = async (inputId: number) => {
-	return await supabase
-		.from("users")
-		.select("id, email_id")
-		.eq("id", inputId)
-		.single();
-}
-
 export const getUserByEmail = async (email: string) => {
     return await supabase
         .from("users")
-        .select("*")
+        .select("*, student:students(*), teacher:teachers(*)")
         .eq("email_id", email)
         .single();
 }
 
 export const getUserByRoll = async (roll_no: string) => {
 	return await supabase
-		.from("students")
-		.select("*")
-		.eq("roll_no", roll_no)
+		.from("users")
+		.select("*, student:students!inner(roll_no)")
+		.eq("students.roll_no", roll_no)
 		.single();
 }
 
-export const setOtpStatus = async (
-	id: number, 
-	email: string, 
-	otpHash: string, 
-	expires_at: Date
-) => {
+export const setOtpStatus = async (id: number, email: string, otpHash: string) => {
     return await supabase
-        .from("otp_verify")
+        .from("otp_verification")
         .insert({
 			user_id: id,
 			email_id: email,
             hashed_otp: otpHash,
-            expires_at: expires_at
 		});
 }
 
@@ -61,7 +47,7 @@ export const updateOtpStatus = async (
 	verified: boolean
 ) => {
     return await supabase
-        .from("otp_verify")
+        .from("otp_verification")
         .update({ 
             attempts: attempts,
             verified: verified
@@ -71,7 +57,7 @@ export const updateOtpStatus = async (
 
 export const getOtpStatus = async (email: string) => {
     return await supabase
-        .from("otp_verify")
+        .from("otp_verification")
         .select("*")
         .eq("email_id", email)
         .single();
@@ -79,19 +65,14 @@ export const getOtpStatus = async (email: string) => {
 
 export const deleteOtpStatus = async (email: string) => {
     return await supabase
-        .from("otp_verify")
+        .from("otp_verification")
         .delete()
         .eq("email_id", email);
 }
 
-export const activeUser = async (id: number, email: string) => {
-    return await supabase
-        .from("users")
-        .update({
-            email_id: email,
-			registered: true
-        })
-		.eq("id", id)
-		.select("*")
-        .single();
+export const registerUser = async (roll_no: string, email: string) => {
+    return await supabase.rpc("register_student_user", {
+		_roll_no: roll_no,
+        _email_id: email
+	})
 }
