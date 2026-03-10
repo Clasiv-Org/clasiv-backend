@@ -51,6 +51,7 @@ app.use(express.json());
 
 app.use("/users", usersRouter);
 app.use("/auth", authRouter);
+app.get("/health", (req: Request, res: Response) => res.status(200).send("Server alive"));
 app.get("/list-files", async (req: Request, res: Response) => {
 	if(!SHARED_DRIVE_ID){
         throw new Error("Shared Drive ID is required");
