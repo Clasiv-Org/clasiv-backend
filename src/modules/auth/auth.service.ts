@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import * as authRepository from "@/modules/auth/auth.repository";
-import { generateOtp, hashOtp, isOtpExpired, setOtpExpiry, verifyOTP } from "@/utils/otp";
+import { generateOtp, hashOtp, verifyOTP } from "@/utils/otp";
 import { sendEmail } from "@/utils/email";
 
 dotenv.config();
@@ -40,26 +40,30 @@ export const register = async (roll_no: string, email: string) => {
 
 export const registerVerification = async (roll_no: string, email: string, otp: string) => {
     const { data: otpData, error: otpErr } = await authRepository.getOtpStatus(email);
-    if(otpErr){
+	const now = new Date();
+	const expiresAt = new Date(otpData.expires_at);
+    
+	if(otpErr){
         throw new Error(otpErr.message);
     }
     if(!otpData){
         throw new Error("User not found");
     }
-	if(otpData.otp_attempts > otpData.max_otp_attempts){
+	if(otpData.otp_attempts === otpData.max_otp_attempts){
         throw new Error("OTP limit exceeded");
 	}
-	if(otpData.created_at < otpData.expires_at){
+	if(now.getTime() >= expiresAt.getTime()){
+		await authRepository.updateOtpStatus(email, otpData.otp_attempts, "expired");
         throw new Error("OTP expired");
 	}
 
-	const isValid = verifyOTP(otp, otpData.hashed_otp);
+	const isValid = verifyOTP(otp, otpData.otp_hash);
     if(!isValid){
-        await authRepository.updateOtpStatus(email, ++otpData.attempts, false);
+        await authRepository.updateOtpStatus(email, ++otpData.otp_attempts, "pending");
         throw new Error("Invalid OTP");
     }
 
-    await authRepository.updateOtpStatus(email, ++otpData.attempts, true);
+    await authRepository.updateOtpStatus(email, ++otpData.otp_attempts, "used");
 	const { data: user, error: userError } = await authRepository.registerUser(roll_no, email);
     if(userError){
         throw new Error(userError.message);
@@ -71,7 +75,6 @@ export const registerVerification = async (roll_no: string, email: string, otp: 
 	const refreshToken = jwt.sign(
 		{
             id: user.id,
-            base_role: user.base_role
 		},
 		REFRESH_TOKEN_SECRET,
 		{expiresIn: "30d"}
@@ -113,26 +116,30 @@ export const login = async (email: string) => {
 
 export const loginVerification = async (email: string, otp: string) => {
     const { data: otpData, error: otpErr } = await authRepository.getOtpStatus(email);
+	const now = new Date();
+	const expiresAt = new Date(otpData.expires_at);
+
     if(otpErr){
         throw new Error(otpErr.message);
     }
     if(!otpData){
         throw new Error("User not found");
     }
-	if(otpData.otp_attempts > otpData.max_otp_attempts){
+	if(otpData.otp_attempts === otpData.max_otp_attempts){
         throw new Error("OTP limit exceeded");
 	}
-	if(otpData.created_at < otpData.expires_at){
+	if(now.getTime() >= expiresAt.getTime()){
+		await authRepository.updateOtpStatus(email, otpData.otp_attempts, "expired");
         throw new Error("OTP expired");
 	}
 
-	const isValid = verifyOTP(otp, otpData.hashed_otp);
+	const isValid = verifyOTP(otp, otpData.otp_hash);
     if(!isValid){
-        await authRepository.updateOtpStatus(email, ++otpData.attempts, false);
+        await authRepository.updateOtpStatus(email, ++otpData.otp_attempts, "pending");
         throw new Error("Invalid OTP");
     }
 
-    await authRepository.updateOtpStatus(email, ++otpData.attempts, true);
+    await authRepository.updateOtpStatus(email, ++otpData.otp_attempts, "used");
 	const { data: user, error: userError } = await authRepository.loginUser(email);
     if(userError){
         throw new Error(userError.message);
@@ -145,7 +152,6 @@ export const loginVerification = async (email: string, otp: string) => {
 	const refreshToken = jwt.sign(
 		{
             id: user.id,
-            base_role: user.base_role
 		},
 		REFRESH_TOKEN_SECRET,
 		{expiresIn: "30d"}

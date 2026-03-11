@@ -7,7 +7,8 @@ export const register = async (req: Request, res: Response) => {
 		await authService.register(roll_no, email);
         res.status(201).json({ message: "OTP sent!"});
 	} catch (error) {
-        res.status(500).send("Error getting user");
+		if(error instanceof Error)
+			res.status(500).send(error.message);
     }
 }
 
@@ -21,17 +22,19 @@ export const registerVerification = async (req: Request, res: Response) => {
 			token
 		});
     } catch (error) {
-        res.status(500).send("Error registering account!");
+		if(error instanceof Error)
+			res.status(500).send(error.message);
     }
 }
 
 export const login = async (req: Request, res: Response) => {
 	try {
 		const { email } = req.body;
-		const token = await authService.login(email);
-		res.status(201).json(token);
+		await authService.login(email);
+        res.status(201).json({ message: "OTP sent!"});
 	} catch (error) {
-		res.status(500).send("Error getting user");
+		if(error instanceof Error)
+			res.status(500).send(error.message);
 	}
 }
 
@@ -45,6 +48,7 @@ export const loginVerification = async (req: Request, res: Response) => {
 			token
 		});
     } catch (error) {
-        res.status(500).send("Error logging in!");
+		if(error instanceof Error)
+			res.status(500).send(error.message);
     }
 }

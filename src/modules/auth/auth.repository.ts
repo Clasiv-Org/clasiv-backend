@@ -1,4 +1,10 @@
-import { createClient } from "@supabase/supabase-js";
+import { 
+	User 
+} from "@/types/users";
+import { 
+	createClient, 
+	PostgrestSingleResponse 
+} from "@supabase/supabase-js";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -37,20 +43,16 @@ export const setOtpStatus = async (id: number, email: string, otpHash: string) =
         .insert({
 			user_id: id,
 			email_id: email,
-            hashed_otp: otpHash,
+            otp_hash: otpHash,
 		});
 }
 
-export const updateOtpStatus = async (
-    email: string, 
-	attempts: number,
-	verified: boolean
-) => {
+export const updateOtpStatus = async (email: string, attempts: number, status: string) => {
     return await supabase
         .from("otp_verification")
         .update({ 
-            attempts: attempts,
-            verified: verified
+            otp_attempts: attempts,
+            status: status
 		})
         .eq("email_id", email);
 }
@@ -70,16 +72,16 @@ export const deleteOtpStatus = async (email: string) => {
         .eq("email_id", email);
 }
 
-export const registerUser = async (roll_no: string, email: string) => {
+export const registerUser = async (roll_no: string, email: string): Promise<PostgrestSingleResponse<User>> => {
     return await supabase.rpc("register_student_user", {
 		_roll_no: roll_no,
         _email_id: email
-	})
+	}).single();
 }
 
-export const loginUser = async (email: string) => {
+export const loginUser = async (email: string): Promise<PostgrestSingleResponse<User>> => {
     return await supabase.rpc("login_user", {
         _email_id: email
-    })
+    }).single();
 }
 

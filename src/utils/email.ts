@@ -1,4 +1,4 @@
-import  Brevo, { BrevoClient }  from "@getbrevo/brevo";
+import { BrevoClient }  from "@getbrevo/brevo";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -43,7 +43,7 @@ export const sendEmail = async (name: string, email: string, otp: string) => {
                 ${otp}
 			</p>
 			<p style="font-size: 12px; color: gray;">
-				This code expires in 5 minutes.
+				This code expires in 3 minutes.
 			</p>
 		</div>	
         `

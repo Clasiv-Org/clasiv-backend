@@ -51,8 +51,8 @@ app.use(express.json());
 
 app.use("/users", usersRouter);
 app.use("/auth", authRouter);
-app.get("/health", (req: Request, res: Response) => res.status(200).send("Server alive"));
-app.get("/list-files", async (req: Request, res: Response) => {
+app.get("/health", (_req: Request, res: Response) => res.status(200).send("OK"));
+app.get("/list-files", async (_req: Request, res: Response) => {
 	if(!SHARED_DRIVE_ID){
         throw new Error("Shared Drive ID is required");
 	}
@@ -75,7 +75,7 @@ app.get("/list-files/:id", async (req: Request<{ id: string }>, res: Response) =
     }
 });
 
-app.get('/auth/google', (req: Request, res: Response) => {
+app.get('/auth/google', (_req: Request, res: Response) => {
 	const authUrl = oAuth2Client.generateAuthUrl({
 		access_type: 'offline',
 		scope: ['https://www.googleapis.com/auth/drive'],
@@ -95,6 +95,7 @@ app.get('/oauth2callback', async (req: Request, res: Response) => {
 		const { tokens } = await oAuth2Client.getToken(code);
 		oAuth2Client.setCredentials(tokens);
 
+		console.log("Tokens received:", tokens);
 		res.send("Login successful! Tokens received. Check logs.");
 	} catch (error) {
 		console.error("Error getting tokens:", error);
