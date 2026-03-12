@@ -1,7 +1,7 @@
 import "module-alias/register";
 import express, { Request, Response } from "express";
-import usersRouter from "./modules/users/users.router";
-import authRouter from "./modules/auth/auth.router";
+import usersRouter from "./modules/users/users.routes";
+import authRouter from "./modules/auth/auth.routes";
 import dotenv from "dotenv";
 import { google } from "googleapis";
 

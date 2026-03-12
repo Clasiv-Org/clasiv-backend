@@ -1,17 +1,15 @@
-import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
+import { 
+	generateRefreshToken,
+	verifyRefreshToken,
+	generateAccessToken
+} from "@/utils/token";
 import * as authRepository from "@/modules/auth/auth.repository";
-import { generateOtp, hashOtp, verifyOTP } from "@/utils/otp";
+import { 
+	generateOtp, 
+	hashOtp, 
+	verifyOTP 
+} from "@/utils/otp";
 import { sendEmail } from "@/utils/email";
-
-dotenv.config();
-
-const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
-const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET as string;
-
-if(!ACCESS_TOKEN_SECRET || !REFRESH_TOKEN_SECRET){
-    throw new Error("Missing JWT credentials");
-}
 
 export const register = async (roll_no: string, email: string) => {
 	const { data: user, error } = await authRepository.getUserByRoll(roll_no);
@@ -72,24 +70,16 @@ export const registerVerification = async (roll_no: string, email: string, otp: 
         throw new Error("User not found");
     }
 	await authRepository.deleteOtpStatus(email);
-	const refreshToken = jwt.sign(
-		{
-            id: user.id,
-		},
-		REFRESH_TOKEN_SECRET,
-		{expiresIn: "30d"}
-	);
-	const accessToken = jwt.sign(
-		{
-            id: user.id,
-			role: user.base_role,
-			role_extentions: [user.base_role]
-		},
-		ACCESS_TOKEN_SECRET,
-		{expiresIn: "30m"}
-	);
+	const refreshToken = generateRefreshToken({ 
+		id: user.id 
+	});
+	const accessToken = generateAccessToken({
+		id: user.id,
+		role: user.base_role,
+		extended_roles: user.extended_roles
+	});
 
-    return { user, token: { accessToken, refreshToken } };
+    return { user, tokens: { accessToken, refreshToken } };
 }
 
 export const login = async (email: string) => {
@@ -149,22 +139,36 @@ export const loginVerification = async (email: string, otp: string) => {
     }
 
 	await authRepository.deleteOtpStatus(email);
-	const refreshToken = jwt.sign(
-		{
-            id: user.id,
-		},
-		REFRESH_TOKEN_SECRET,
-		{expiresIn: "30d"}
-	);
-	const accessToken = jwt.sign(
-		{
-            id: user.id,
-			role: user.base_role,
-			role_extentions: [user.base_role]
-		},
-		ACCESS_TOKEN_SECRET,
-		{expiresIn: "30m"}
-	);
+	const refreshToken = generateRefreshToken({ 
+		id: user.id 
+	});
+	const accessToken = generateAccessToken({
+		id: user.id,
+		role: user.base_role,
+		extended_roles: user.extended_roles
+	});
 
-    return {user, token: {accessToken, refreshToken}};
+    return {user, tokens: {accessToken, refreshToken}};
+}
+
+export const refreshTokens = async (refresh_token: string) => {
+	const decode = verifyRefreshToken(refresh_token);
+
+    const { data: user, error } = await authRepository.getUserById(decode.id);
+    if(error){
+        throw new Error(error.message);
+    }
+    if(!user){
+        throw new Error("User not found");
+    }
+
+	const refreshToken = generateRefreshToken({ 
+		id: user.id 
+	});
+	const accessToken = generateAccessToken({
+		id: user.id,
+		role: user.base_role,
+		extended_roles: user.extended_roles
+	});
+    return { user, tokens: { accessToken, refreshToken } };
 }

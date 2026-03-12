@@ -21,6 +21,12 @@ const supabase = createClient(
     SUPABASE_KEY as string
 );
 
+export const getUserById = async (id: string): Promise<PostgrestSingleResponse<User>> => {
+    return await supabase.rpc("get_user_by_id", {
+		_id: id
+	}).single();
+}
+
 export const getUserByEmail = async (email: string) => {
     return await supabase
         .from("users")
@@ -84,4 +90,3 @@ export const loginUser = async (email: string): Promise<PostgrestSingleResponse<
         _email_id: email
     }).single();
 }
-

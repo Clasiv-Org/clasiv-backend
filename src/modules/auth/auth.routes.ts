@@ -26,5 +26,8 @@ router.post("/login/verification",
     otpValidator, 
     userController.loginVerification
 );
+router.post("/refresh", 
+	userController.refreshTokens
+);
 
 export default router;
