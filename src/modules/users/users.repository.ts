@@ -21,3 +21,10 @@ export const getUserById = async (id: string): Promise<PostgrestSingleResponse<U
         _user_id: id
     }).single();
 };
+
+export const getUsers = async (limit: number, offset: number): Promise<PostgrestSingleResponse<User[]>> => {
+    return await supabase.rpc("get_users_paginated", {
+		_limit: limit,
+		_offset: offset
+	});
+}
