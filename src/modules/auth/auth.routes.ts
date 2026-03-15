@@ -23,6 +23,7 @@ router.post("/otp/verification",
 	authController.otpVerification
 );
 router.post("/otp/resend", authController.resendOtp);
+router.post("/otp/change-email", authController.changeEmail);
 router.post("/refresh", 
 	authController.refreshTokens
 );

@@ -142,6 +142,9 @@ export const resendOtp = async (otp_Id: string, full_name: string) => {
         throw new Error("User not found");
     }
 	if(otpSession.resend_count === otpSession.max_resend){
+		await authRepository.updateOtpStatus(otpSession.id, {
+            status: "expired"
+		});
         throw new Error("OTP resend limit exceeded");
 	}
 
@@ -160,6 +163,41 @@ export const resendOtp = async (otp_Id: string, full_name: string) => {
         session_Id: otpSession.id, 
 		full_name: full_name
 	};
+}
+
+export const changeEmail = async (otp_Id: string, email: string, full_name: string) => {
+    const { data: otpSession, error: otpErr } = await authRepository.getOtpStatus(otp_Id);
+
+    if(otpErr){
+        throw new Error(otpErr.message);
+    }
+    if(!otpSession){
+        throw new Error("User not found");
+    }
+    if(otpSession.change_email_count === otpSession.max_email_change){
+		await authRepository.updateOtpStatus(otpSession.id, {
+            status: "expired"
+		});
+        throw new Error("Email change limit exceeded");
+    }
+
+    const otp = generateOtp();
+    const otpHash = hashOtp(otp);
+
+    await authRepository.updateOtpStatus(otp_Id, {
+        email_id: email,
+        otp_hash: otpHash, 
+        change_email_count: ++otpSession.change_email_count,
+        otp_attempts: 0,
+		resend_count: 0,
+        expires_at: new Date(Date.now() + 3 * 60 * 1000)
+    });
+
+    await sendEmail(full_name, email, otp);
+    return {
+        session_Id: otpSession.id, 
+        full_name: full_name
+    };
 }
 
 export const refreshTokens = async (refresh_token: string) => {
