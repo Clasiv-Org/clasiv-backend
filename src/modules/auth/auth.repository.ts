@@ -45,48 +45,50 @@ export const getUserByRoll = async (roll_no: string) => {
 
 export const setOtpStatus = async (id: number, email: string, otpHash: string) => {
     return await supabase
-        .from("otp_verification")
+        .from("otp_sessions")
         .insert({
 			user_id: id,
 			email_id: email,
             otp_hash: otpHash,
-		});
+		})
+		.select()
+		.single();
 }
 
-export const updateOtpStatus = async (email: string, attempts: number, status: string) => {
+export const updateOtpStatus = async (otp_id: string, attempts: number, status: string) => {
     return await supabase
-        .from("otp_verification")
+        .from("otp_sessions")
         .update({ 
             otp_attempts: attempts,
             status: status
 		})
-        .eq("email_id", email);
+        .eq("id", otp_id);
 }
 
-export const getOtpStatus = async (email: string) => {
+export const getOtpStatus = async (otp_id: string) => {
     return await supabase
-        .from("otp_verification")
+        .from("otp_sessions")
         .select("*")
-        .eq("email_id", email)
+        .eq("id", otp_id)
         .single();
 }
 
-export const deleteOtpStatus = async (email: string) => {
+export const deleteOtpStatus = async (otp_id: string) => {
     return await supabase
-        .from("otp_verification")
+        .from("otp_sessions")
         .delete()
-        .eq("email_id", email);
+        .eq("id", otp_id);
 }
 
-export const registerUser = async (roll_no: string, email: string): Promise<PostgrestSingleResponse<User>> => {
+export const registerUser = async (user_id: string, email: string): Promise<PostgrestSingleResponse<User>> => {
     return await supabase.rpc("register_student_user", {
-		_roll_no: roll_no,
+		_user_id: user_id,
         _email_id: email
 	}).single();
 }
 
-export const loginUser = async (email: string): Promise<PostgrestSingleResponse<User>> => {
+export const loginUser = async (user_id: string): Promise<PostgrestSingleResponse<User>> => {
     return await supabase.rpc("login_user", {
-        _email_id: email
+		_user_id: user_id,
     }).single();
 }

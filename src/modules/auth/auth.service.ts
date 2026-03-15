@@ -10,6 +10,7 @@ import {
 	verifyOTP 
 } from "@/utils/otp";
 import { sendEmail } from "@/utils/email";
+import { Otp } from "@/types/auth";
 
 export const register = async (roll_no: string, email: string) => {
 	const { data: user, error } = await authRepository.getUserByRoll(roll_no);
@@ -26,60 +27,14 @@ export const register = async (roll_no: string, email: string) => {
 	const otp = generateOtp();
 	const otpHash = hashOtp(otp);
 
-    await authRepository.setOtpStatus(
+    const { data: otpData } = await authRepository.setOtpStatus(
 		user.id, 
 		email, 
 		otpHash, 
 	);
 
 	await sendEmail(user.full_name, email, otp);
-	return;
-}
-
-export const registerVerification = async (roll_no: string, email: string, otp: string) => {
-    const { data: otpData, error: otpErr } = await authRepository.getOtpStatus(email);
-	const now = new Date();
-	const expiresAt = new Date(otpData.expires_at);
-    
-	if(otpErr){
-        throw new Error(otpErr.message);
-    }
-    if(!otpData){
-        throw new Error("User not found");
-    }
-	if(otpData.otp_attempts === otpData.max_otp_attempts){
-        throw new Error("OTP limit exceeded");
-	}
-	if(now.getTime() >= expiresAt.getTime()){
-		await authRepository.updateOtpStatus(email, otpData.otp_attempts, "expired");
-        throw new Error("OTP expired");
-	}
-
-	const isValid = verifyOTP(otp, otpData.otp_hash);
-    if(!isValid){
-        await authRepository.updateOtpStatus(email, ++otpData.otp_attempts, "pending");
-        throw new Error("Invalid OTP");
-    }
-
-    await authRepository.updateOtpStatus(email, ++otpData.otp_attempts, "used");
-	const { data: user, error: userError } = await authRepository.registerUser(roll_no, email);
-    if(userError){
-        throw new Error(userError.message);
-    }
-    if(!user){
-        throw new Error("User not found");
-    }
-	await authRepository.deleteOtpStatus(email);
-	const refreshToken = generateRefreshToken({ 
-		id: user.id 
-	});
-	const accessToken = generateAccessToken({
-		id: user.id,
-		role: user.base_role,
-		extended_roles: user.extended_roles
-	});
-
-    return { user, tokens: { accessToken, refreshToken } };
+	return otpData.id;
 }
 
 export const login = async (email: string) => {
@@ -94,18 +49,18 @@ export const login = async (email: string) => {
 	const otp = generateOtp();
 	const otpHash = hashOtp(otp);
 
-    await authRepository.setOtpStatus(
+    const { data: otpData } = await authRepository.setOtpStatus(
 		user.id, 
 		email, 
 		otpHash, 
 	);
 
 	await sendEmail(user.full_name, email, otp);
-	return;
+	return otpData.id;
 }
 
-export const loginVerification = async (email: string, otp: string) => {
-    const { data: otpData, error: otpErr } = await authRepository.getOtpStatus(email);
+export const otpVerification = async (otp: Otp) => {
+    const { data: otpData, error: otpErr } = await authRepository.getOtpStatus(otp.id);
 	const now = new Date();
 	const expiresAt = new Date(otpData.expires_at);
 
@@ -116,29 +71,33 @@ export const loginVerification = async (email: string, otp: string) => {
         throw new Error("User not found");
     }
 	if(otpData.otp_attempts === otpData.max_otp_attempts){
-        throw new Error("OTP limit exceeded");
+        throw new Error("OTP attempt limit exceeded");
 	}
 	if(now.getTime() >= expiresAt.getTime()){
-		await authRepository.updateOtpStatus(email, otpData.otp_attempts, "expired");
+		await authRepository.updateOtpStatus(otp.id, otpData.otp_attempts, "expired");
         throw new Error("OTP expired");
 	}
 
-	const isValid = verifyOTP(otp, otpData.otp_hash);
+	const isValid = verifyOTP(otp.value, otpData.otp_hash);
     if(!isValid){
-        await authRepository.updateOtpStatus(email, ++otpData.otp_attempts, "pending");
+        await authRepository.updateOtpStatus(otp.id, ++otpData.otp_attempts, "pending");
         throw new Error("Invalid OTP");
     }
 
-    await authRepository.updateOtpStatus(email, ++otpData.otp_attempts, "used");
-	const { data: user, error: userError } = await authRepository.loginUser(email);
-    if(userError){
-        throw new Error(userError.message);
+    await authRepository.updateOtpStatus(otp.id, ++otpData.otp_attempts, "used");
+
+	const actionUser = otp.type === "register"
+		? authRepository.registerUser(otpData.id, otp.email)
+		: authRepository.loginUser(otpData.id);
+	const { data: user, error: userErr } = await actionUser;
+
+    if(userErr){
+        throw new Error(userErr.message);
     }
     if(!user){
         throw new Error("User not found");
     }
 
-	await authRepository.deleteOtpStatus(email);
 	const refreshToken = generateRefreshToken({ 
 		id: user.id 
 	});

@@ -2,32 +2,28 @@ import { Router } from "express";
 import emailValidator from "@/middleware/email.middleware";
 import rollValidator from "@/middleware/rollNo.middleware";
 import otpValidator from "@/middleware/otp.middleware";
-import * as userController from "@/modules/auth/auth.controller";
+import * as authController from "@/modules/auth/auth.controller";
+import verificationValidator from "@/middleware/verification.middleware";
 
 const router = Router();
 
 router.post("/register", 
 	emailValidator, 
 	rollValidator, 
-	userController.register
-);
-router.post("/register/verification", 
-	emailValidator, 
-	rollValidator, 
-	otpValidator, 
-	userController.registerVerification
+	authController.register
 );
 router.post("/login", 
 	emailValidator, 
-	userController.login
+	authController.login
 );
-router.post("/login/verification", 
-    emailValidator, 
-    otpValidator, 
-    userController.loginVerification
+router.post("/otp/verification", 
+	verificationValidator, 
+	emailValidator, 
+	otpValidator, 
+	authController.otpVerification
 );
 router.post("/refresh", 
-	userController.refreshTokens
+	authController.refreshTokens
 );
 
 export default router;

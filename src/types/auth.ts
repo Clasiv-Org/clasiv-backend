@@ -26,3 +26,12 @@ export const EmailOtpSchema = z.object({
 });
 
 export type EmailOtp = z.infer<typeof EmailOtpSchema>;
+
+export const OtpSchema = z.object({
+    id: z.string(),
+    email: z.string(),
+	value: z.string(),
+	type: z.string(),
+});
+
+export type Otp = z.infer<typeof OtpSchema>;
