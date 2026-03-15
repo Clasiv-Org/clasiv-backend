@@ -23,7 +23,7 @@ const supabase = createClient(
 
 export const getUserById = async (id: string): Promise<PostgrestSingleResponse<User>> => {
     return await supabase.rpc("get_user_by_id", {
-		_id: id
+		_user_id: id
 	}).single();
 }
 
