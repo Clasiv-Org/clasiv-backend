@@ -74,7 +74,6 @@ export const login = async (email: string) => {
 }
 
 export const otpVerification = async (otp: OtpPayload) => {
-	console.log(otp);
     const { data: otpData, error: otpErr } = await authRepository.getOtpStatus(otp.id);
 	const now = new Date();
 
@@ -85,6 +84,9 @@ export const otpVerification = async (otp: OtpPayload) => {
         throw new Error("User not found");
     }
 	if(otpData.otp_attempts === otpData.max_otp_attempts){
+        await authRepository.updateOtpStatus(otp.id, {
+            status: "expired"
+        })
         throw new Error("OTP attempt limit exceeded");
 	}
 	const expiresAt = new Date(otpData.expires_at);
@@ -94,12 +96,11 @@ export const otpVerification = async (otp: OtpPayload) => {
 		});
         throw new Error("OTP expired");
 	}
-	console.log(otp.value, otpData.otp_hash);
+
 	const isValid = verifyOTP(otp.value, otpData.otp_hash);
     if(!isValid){
         await authRepository.updateOtpStatus(otp.id, {
             otp_attempts: ++otpData.otp_attempts, 
-            status: "pending"
 		});
         throw new Error("Invalid OTP");
     }
@@ -113,10 +114,8 @@ export const otpVerification = async (otp: OtpPayload) => {
 		? authRepository.registerUser(otpData.user_id, otp.email)
 		: authRepository.loginUser(otpData.user_id);
 	const { data: user, error: userErr } = await actionUser;
-	console.log(user);
 
     if(userErr){
-		console.log(userErr);
         throw new Error(userErr.message);
     }
     if(!user){
@@ -158,6 +157,7 @@ export const resendOtp = async (otp_Id: string, full_name: string) => {
         otp_hash: otpHash, 
         resend_count: ++otpSession.resend_count,
 		otp_attempts: 0,
+		updated_at: new Date(Date.now()),
 		expires_at: new Date(Date.now() + 3 * 60 * 1000)
     });
 
@@ -193,6 +193,7 @@ export const changeEmail = async (otp_Id: string, email: string, full_name: stri
         change_email_count: ++otpSession.change_email_count,
         otp_attempts: 0,
 		resend_count: 0,
+		updated_at: new Date(Date.now()),
         expires_at: new Date(Date.now() + 3 * 60 * 1000)
     });
 
