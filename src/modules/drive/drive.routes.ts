@@ -8,3 +8,5 @@ router.use(userAuth);
 
 router.get("/folders", driveController.getFolders);
 router.get("/folders/:id", driveController.getFolder);
+
+export default router;
