@@ -74,6 +74,7 @@ export const login = async (email: string) => {
 }
 
 export const otpVerification = async (otp: OtpPayload) => {
+	console.log(otp);
     const { data: otpData, error: otpErr } = await authRepository.getOtpStatus(otp.id);
 	const now = new Date();
 
@@ -93,7 +94,7 @@ export const otpVerification = async (otp: OtpPayload) => {
 		});
         throw new Error("OTP expired");
 	}
-
+	console.log(otp.value, otpData.otp_hash);
 	const isValid = verifyOTP(otp.value, otpData.otp_hash);
     if(!isValid){
         await authRepository.updateOtpStatus(otp.id, {
@@ -109,11 +110,13 @@ export const otpVerification = async (otp: OtpPayload) => {
 	});
 
 	const actionUser = otp.type === "register"
-		? authRepository.registerUser(otpData.id, otp.email)
-		: authRepository.loginUser(otpData.id);
+		? authRepository.registerUser(otpData.user_id, otp.email)
+		: authRepository.loginUser(otpData.user_id);
 	const { data: user, error: userErr } = await actionUser;
+	console.log(user);
 
     if(userErr){
+		console.log(userErr);
         throw new Error(userErr.message);
     }
     if(!user){
