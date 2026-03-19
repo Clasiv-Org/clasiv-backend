@@ -1,4 +1,5 @@
 import * as userRepository from "@/modules/users/users.repository";
+import { CreateUser, User } from "@/types/users";
 
 export const getUserById = async (id: string) => {
 	const { data: user, error: userErr } = await userRepository.getUserById(id);
@@ -22,4 +23,15 @@ export const getUsers = async (page: number, limit: number) => {
         throw new Error("Users not found");
     }
     return users;
+};
+
+export const createUser = async (user: CreateUser) => {
+    const { data: createdUser, error: userErr } = await userRepository.createUser(user);
+    if(userErr){
+        throw new Error(userErr.message);
+    }
+    if(!createdUser){
+        throw new Error("User not created");
+    }
+    return createdUser;
 };

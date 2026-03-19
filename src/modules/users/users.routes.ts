@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as userController from "@/modules/users/users.controller";
-import { userAuth } from "@/middleware/user.middleware";
+import userAuth from "@/middleware/user.authentication";
+import userValidator from "@/middleware/user.validator";
 import paginationValidator  from "@/middleware/pagination.middleware";
 
 const router = Router();
@@ -10,6 +11,10 @@ router.use(userAuth);
 router.get("/", 
 	paginationValidator,
 	userController.getUsers
+);
+router.post("/",
+	userValidator,
+	userController.createUser
 );
 router.get("/me", userController.getMe);
 

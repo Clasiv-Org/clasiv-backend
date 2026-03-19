@@ -1,4 +1,4 @@
-import { userAuth } from "@/middleware/user.middleware";
+import userAuth from "@/middleware/user.authentication";
 import * as driveController from "@/modules/drive/drive.controller";
 import { Router } from "express";
 
