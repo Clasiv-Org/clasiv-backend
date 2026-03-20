@@ -1,31 +1,34 @@
 import { Router } from "express";
-import emailValidator from "@/middleware/email.middleware";
-import rollValidator from "@/middleware/rollNo.middleware";
-import otpValidator from "@/middleware/auth.otpValidator";
+import validator from "@/middleware/auth.validator";
 import * as authController from "@/modules/auth/auth.controller";
-import { OtpChangeEmailSchema, OtpResendSchema, OtpVerifySchema } from "@/types/auth";
+import { 
+	LoginSchema, 
+	OtpChangeEmailSchema, 
+	OtpResendSchema, 
+	OtpVerifySchema, 
+	RegisterSchema 
+} from "@/types/auth";
 
 const router = Router();
 
 router.post("/register", 
-	emailValidator, 
-	rollValidator, 
+	validator(RegisterSchema),
 	authController.register
 );
 router.post("/login", 
-	emailValidator, 
+    validator(LoginSchema),
 	authController.login
 );
 router.post("/otp/verification", 
-    otpValidator(OtpVerifySchema),
+    validator(OtpVerifySchema),
 	authController.otpVerification
 );
 router.post("/otp/resend",
-    otpValidator(OtpResendSchema),
+    validator(OtpResendSchema),
 	authController.resendOtp
 );
 router.post("/otp/change-email",
-    otpValidator(OtpChangeEmailSchema),
+    validator(OtpChangeEmailSchema),
 	authController.changeEmail
 );
 router.post("/refresh", 

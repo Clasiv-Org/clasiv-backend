@@ -3,11 +3,11 @@ import * as authService from "@/modules/auth/auth.service";
 
 export const register = async (req: Request, res: Response) => {
 	try {
-		const { roll_no, email } = req.body;
+		const regData = req.body;
 		const { 
 			session_id, 
 			full_name: user 
-		} = await authService.register(roll_no, email);
+		} = await authService.register(regData);
 		res.status(200).json({ 
 			message: "OTP sent!",
 			session_id,
@@ -23,11 +23,11 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
 	try {
-		const { email } = req.body;
+		const loginData = req.body;
 		const { 
 			session_id, 
 			full_name: user 
-		} = await authService.login(email);
+		} = await authService.login(loginData);
 		res.status(200).json({ 
 			message: "OTP sent!", 
 			session_id, 
@@ -100,8 +100,8 @@ export const changeEmail = async (req: Request, res: Response) => {
 
 export const refreshTokens = async (req: Request, res: Response) => {
 	try {
-		const { refresh_token }  = req.body;
-		const { user, tokens } = await authService.refreshTokens(refresh_token);
+		const { token }  = req.body;
+		const { user, tokens } = await authService.refreshTokens(token);
 		res.status(200).json({
 			message: "Token refreshed successfully!",
 			user,

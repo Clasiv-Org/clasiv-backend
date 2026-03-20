@@ -10,6 +10,15 @@ export const AccessTokenSchema = z.object({
 	extended_roles: z.array(z.string()),
 });
 
+export const RegisterSchema = z.object({
+    roll_no: z.string().min(11).max(11),
+    email: z.string().email(),
+});
+
+export const LoginSchema = z.object({
+    email: z.string().email(),
+});
+
 export const OtpSessionSchema = z.object({
 	id: z.string().uuid(),
 	user_id: z.string().uuid(),
@@ -71,6 +80,8 @@ export const OtpChangeEmailSchema = z.object({
 
 export type RefreshTokenPayload = z.infer<typeof RefreshTokenSchema>;
 export type AccessTokenPayload = z.infer<typeof AccessTokenSchema>;
+export type RegisterPayload = z.infer<typeof RegisterSchema>;
+export type LoginPayload = z.infer<typeof LoginSchema>;
 export type OtpSession = z.infer<typeof OtpSessionSchema>;
 export type OtpSessionWithUser = z.infer<typeof OtpSessionWithUserSchema>;
 export type UpdateOtpSession = z.infer<typeof UpdateOtpSessionSchema>;

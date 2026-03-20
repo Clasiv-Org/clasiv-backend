@@ -11,13 +11,15 @@ import {
 } from "@/utils/otp";
 import { sendEmail } from "@/utils/email";
 import { 
+    LoginPayload,
 	OtpChangeEmail, 
 	OtpResend, 
-	OtpVerify 
+	OtpVerify, 
+    RegisterPayload
 } from "@/types/auth";
 
-export const register = async (roll_no: string, email: string) => {
-	const { data: user, error: userErr } = await authRepository.getUserByRoll(roll_no);
+export const register = async (regData: RegisterPayload) => {
+	const { data: user, error: userErr } = await authRepository.getUserByRoll(regData.roll_no);
 	if(userErr){
 		throw new Error(userErr.message);
 	}
@@ -33,7 +35,7 @@ export const register = async (roll_no: string, email: string) => {
 
 	const { data: otpSession, error: otpErr } = await authRepository.setOtpStatus({
 		session_id: user.id, 
-		email: email, 
+		email: regData.email, 
 		value: otpHash, 
 		type: "register"
 	});
@@ -41,15 +43,15 @@ export const register = async (roll_no: string, email: string) => {
 		throw new Error(otpErr.message);
 	}
 
-	await sendEmail(user.full_name, email, otp);
+	await sendEmail(user.full_name, regData.email, otp);
 	return {
 		session_id: otpSession.id, 
 		full_name: user.full_name
 	};
 }
 
-export const login = async (email: string) => {
-	const { data: user, error: userErr } = await authRepository.getUserByEmail(email);
+export const login = async (loginData: LoginPayload) => {
+	const { data: user, error: userErr } = await authRepository.getUserByEmail(loginData.email);
 	if(userErr){
 		throw new Error(userErr.message);
 	}
@@ -62,7 +64,7 @@ export const login = async (email: string) => {
 
 	const { data: otpSession, error: otpErr } = await authRepository.setOtpStatus({
 		session_id: user.id, 
-		email: email, 
+		email: loginData.email, 
 		value: otpHash, 
 		type: "login"
 	});
@@ -70,7 +72,7 @@ export const login = async (email: string) => {
 		throw new Error(otpErr.message);
 	}
 
-	await sendEmail(user.full_name, email, otp);
+	await sendEmail(user.full_name, loginData.email, otp);
 	return {
 		session_id: otpSession.id, 
 		full_name: user.full_name
