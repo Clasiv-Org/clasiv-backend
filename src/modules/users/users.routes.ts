@@ -8,13 +8,13 @@ const router = Router();
 
 router.use(userAuth);
 
-router.get("/", 
-	paginationValidator,
-	userController.getUsers
-);
 router.post("/",
 	userValidator,
 	userController.createUser
+);
+router.get("/", 
+	paginationValidator,
+	userController.getUsers
 );
 router.get("/me", userController.getMe);
 
