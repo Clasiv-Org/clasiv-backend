@@ -2,7 +2,6 @@ import * as userRepository from "@/modules/users/users.repository";
 import { 
 	CreateUser, 
 	UpdateUser, 
-    DeleteUser,
 	RoleMap,
     UpdateSelf, 
 } from "@/types/users";
@@ -38,13 +37,6 @@ export const getUsers = async (page: number, limit: number) => {
         throw new Error("Users not found");
     }
     return users;
-}
-
-export const deleteUser = async (user: DeleteUser) => {
-    const { error: userErr } = await userRepository.deleteUser(user);
-    if(userErr){
-        throw new Error(userErr.message);
-    }
 }
 
 export const getSelf = async (id: string) => {
@@ -98,4 +90,11 @@ export const updateUser = async (id: string, user: UpdateUser) => {
         throw new Error("User not found");
     }
     return updatedUser;
+}
+
+export const deleteUser = async (user_id: string) => {
+    const { error: userErr } = await userRepository.deleteUser(user_id);
+    if(userErr){
+        throw new Error(userErr.message);
+    }
 }

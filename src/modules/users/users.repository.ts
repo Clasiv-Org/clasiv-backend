@@ -2,7 +2,6 @@ import {
 	User, 
 	CreateUser, 
 	UpdateUser, 
-	DeleteUser, 
 	Role, 
 	RoleMap,
     UpdateSelf, 
@@ -69,13 +68,6 @@ export const createUser = async (
 	}).single();
 }
 
-export const deleteUser = async (user: DeleteUser) => {
-    return await supabase.from("users")
-		.delete()
-		.eq("id", user.id)
-		.single();
-}
-
 export const getUserById = async (
 	id: string
 ): Promise<PostgrestSingleResponse<User>> => {
@@ -121,4 +113,11 @@ export const updateUser = async (
         
 		_teacher_abbrv: user.base_role === "teacher" ? user.teacher_abbrv : null,
     }).single();
+}
+
+export const deleteUser = async (user_id: string) => {
+    return await supabase.from("users")
+		.delete()
+		.eq("id", user_id)
+		.single();
 }
