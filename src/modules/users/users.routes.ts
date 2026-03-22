@@ -1,7 +1,7 @@
 import { Router } from "express";
 import * as userController from "@/modules/users/users.controller";
-import userAuth from "@/middleware/user.authentication";
-import validator from "@/middleware/user.validator";
+import authentication from "@/middleware/global.authentication";
+import validator from "@/middleware/global.validator";
 import paginationValidator  from "@/middleware/pagination.middleware";
 import { 
 	CreateUserSchema, 
@@ -11,7 +11,7 @@ import {
 
 const router = Router();
 
-router.use(userAuth);
+router.use(authentication);
 
 router.post("/",
 	validator(CreateUserSchema),

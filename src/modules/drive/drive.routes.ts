@@ -1,10 +1,10 @@
-import userAuth from "@/middleware/user.authentication";
-import * as driveController from "@/modules/drive/drive.controller";
 import { Router } from "express";
+import * as driveController from "@/modules/drive/drive.controller";
+import authentication from "@/middleware/global.authentication";
 
 const router = Router();
 
-router.use(userAuth);
+router.use(authentication);
 
 router.get("/folders", driveController.getFolders);
 router.get("/folders/:id", driveController.getFolder);

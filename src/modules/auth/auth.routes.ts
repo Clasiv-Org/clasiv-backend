@@ -1,5 +1,5 @@
 import { Router } from "express";
-import validator from "@/middleware/auth.validator";
+import validator from "@/middleware/global.validator";
 import * as authController from "@/modules/auth/auth.controller";
 import { 
 	LoginSchema, 
