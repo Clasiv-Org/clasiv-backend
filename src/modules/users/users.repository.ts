@@ -4,7 +4,8 @@ import {
 	UpdateUser, 
 	DeleteUser, 
 	Role, 
-	RoleMap, 
+	RoleMap,
+    UpdateSelf, 
 } from "@/types/users";
 import { 
 	createClient, 
@@ -30,14 +31,6 @@ export const getRoles = async (): Promise<PostgrestSingleResponse<Role[]>> => {
 	return await supabase
 		.from("roles")
 		.select("role_id, role_name")
-}
-
-export const getUserById = async (
-	id: string
-): Promise<PostgrestSingleResponse<User>> => {
-	return await supabase.rpc("get_user_by_id", {
-		_user_id: id
-	}).single();
 }
 
 export const getUsers = async (
@@ -107,4 +100,24 @@ export const deleteUser = async (user: DeleteUser) => {
 		.delete()
 		.eq("id", user.id)
 		.single();
+}
+
+export const getUserById = async (
+	id: string
+): Promise<PostgrestSingleResponse<User>> => {
+	return await supabase.rpc("get_user_by_id", {
+		_user_id: id
+	}).single();
+}
+
+export const updateSelf = async (
+	id: string, 
+	user: UpdateSelf
+): Promise<PostgrestSingleResponse<User>> => {
+    return await supabase.rpc("update_user_self", {
+        _user_id: id,
+        _email_id: user.email_id ?? null,
+        _phone_no: user.phone_no ?? null,
+		_dob: user.dob ?? null,
+    }).single();
 }

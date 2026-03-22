@@ -3,7 +3,8 @@ import {
 	CreateUser, 
 	UpdateUser, 
     DeleteUser,
-	RoleMap, 
+	RoleMap,
+    UpdateSelf, 
 } from "@/types/users";
 
 export const createUser = async (user: CreateUser) => {
@@ -66,7 +67,7 @@ export const deleteUser = async (user: DeleteUser) => {
     }
 };
 
-export const getMe = async (id: string) => {
+export const getSelf = async (id: string) => {
 	const { data: user, error: userErr } = await userRepository.getUserById(id);
 	if(userErr){
         throw new Error(userErr.message);
@@ -75,4 +76,15 @@ export const getMe = async (id: string) => {
         throw new Error("User not found");
 	}
     return user;
+};
+
+export const updateSelf = async (id: string, user: UpdateSelf) => {
+	const { data: updatedUser, error: userErr } = await userRepository.updateSelf(id, user);
+	if(userErr){
+        throw new Error(userErr.message);
+	}
+	if(!updatedUser){
+        throw new Error("User not found");
+	}
+    return updatedUser;
 };

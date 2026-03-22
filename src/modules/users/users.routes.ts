@@ -6,7 +6,8 @@ import paginationValidator  from "@/middleware/pagination.middleware";
 import { 
 	CreateUserSchema, 
 	UpdateUserSchema, 
-	DeleteUserSchema, 
+	DeleteUserSchema,
+    UpdateSelfSchema, 
 } from "@/types/users";
 
 const router = Router();
@@ -29,6 +30,12 @@ router.delete("/",
     validator(DeleteUserSchema),
 	userController.deleteUser
 );
-router.get("/me", userController.getMe);
+router.get("/me", 
+	userController.getSelf
+);
+router.patch("/me", 
+    validator(UpdateSelfSchema),
+	userController.updateSelf
+);
 
 export default router;
