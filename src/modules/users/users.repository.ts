@@ -1,9 +1,10 @@
 import { 
+	User, 
 	CreateUser, 
+	UpdateUser, 
+	DeleteUser, 
 	Role, 
 	RoleMap, 
-	UpdateUser, 
-	User 
 } from "@/types/users";
 import { 
 	createClient, 
@@ -72,7 +73,7 @@ export const createUser = async (
 		_department_id: user.department_id ?? null,
 
 		_teacher_abbrv: user.base_role === "teacher" ? user.teacher_abbrv : null,
-	});
+	}).single();
 }
 
 export const updateUser = async (
@@ -98,5 +99,12 @@ export const updateUser = async (
         _department_id: user.department_id ?? null,
         
 		_teacher_abbrv: user.base_role === "teacher" ? user.teacher_abbrv : null,
-    });
+    }).single();
+}
+
+export const deleteUser = async (user: DeleteUser) => {
+    return await supabase.from("users")
+		.delete()
+		.eq("id", user.id)
+		.single();
 }

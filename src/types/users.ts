@@ -63,7 +63,11 @@ export const UpdateUserSchema = BaseCreateUserSchema.partial()
 
 		return true;
 	}
-);   
+);
+
+export const DeleteUserSchema = z.object({
+    id: z.string().uuid(),
+});
 
 export const RoleSchema = z.object({
     role_id: z.number(),
@@ -76,5 +80,6 @@ type ExtendedRole = "cr" | "iic";
 export type User = z.infer<typeof UserSchema>;
 export type CreateUser = z.infer<typeof CreateUserSchema>;
 export type UpdateUser = z.infer<typeof UpdateUserSchema>;
+export type DeleteUser = z.infer<typeof DeleteUserSchema>;
 export type Role = z.infer<typeof RoleSchema>;
 export type RoleMap = Record<BaseRole | ExtendedRole, number>;

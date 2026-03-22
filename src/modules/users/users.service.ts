@@ -1,5 +1,10 @@
 import * as userRepository from "@/modules/users/users.repository";
-import { CreateUser, RoleMap, UpdateUser } from "@/types/users";
+import { 
+	CreateUser, 
+	UpdateUser, 
+    DeleteUser,
+	RoleMap, 
+} from "@/types/users";
 
 export const createUser = async (user: CreateUser) => {
 	const { data: roles, error: rolesErr } = await userRepository.getRoles();
@@ -52,6 +57,13 @@ export const updateUser = async (user: UpdateUser) => {
         throw new Error("User not found");
     }
     return updatedUser;
+};
+
+export const deleteUser = async (user: DeleteUser) => {
+    const { error: userErr } = await userRepository.deleteUser(user);
+    if(userErr){
+        throw new Error(userErr.message);
+    }
 };
 
 export const getMe = async (id: string) => {
