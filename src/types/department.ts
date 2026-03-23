@@ -8,5 +8,11 @@ export const DepartmentSchema = z.object({
 	hod_id: z.string().uuid(),
 });
 
+export const CreateDepartmentSchema = z.object({
+    department_name: z.string(),
+    department_abbrv: z.string(),
+    hod_id: z.string().uuid(),
+});
 
 export type Department = z.infer<typeof DepartmentSchema>;
+export type CreateDepartment = z.infer<typeof CreateDepartmentSchema>;
