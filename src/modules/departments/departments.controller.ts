@@ -10,3 +10,16 @@ export const getDepartments = async (_req: Request, res: Response) => {
             res.status(500).send(error.message);
     }
 }
+
+export const createDepartment = async (req: Request, res: Response) => {
+    try{
+        const department = await departmentService.createDepartment(req.body);
+        res.json({
+			message: "Department created successfully!",
+			department
+		});
+    } catch(error) {
+        if(error instanceof Error)
+            res.status(500).send(error.message);
+    }
+}
