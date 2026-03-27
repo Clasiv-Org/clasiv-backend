@@ -2,13 +2,10 @@ import {
 	AccessTokenPayload, 
 	RefreshTokenPayload 
 } from "@/types/auth";
-import dotenv from "dotenv";
 import jwt, {
 	JsonWebTokenError, 
 	TokenExpiredError, 
 } from "jsonwebtoken";
-
-dotenv.config();
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET as string;

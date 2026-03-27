@@ -1,7 +1,4 @@
 import { BrevoClient }  from "@getbrevo/brevo";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const CLASIV_EMAIL = process.env.CLASIV_EMAIL;
