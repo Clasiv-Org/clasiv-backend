@@ -20,15 +20,9 @@ import {
 
 export const register = async (regData: RegisterPayload) => {
 	const { data: user, error: userErr } = await authRepository.getUserByRoll(regData.roll_no);
-	if(userErr){
-		throw new Error(userErr.message);
-	}
-	if(!user){
-		throw new Error("User not found");
-	}
-	if(user.email_id){
-		throw new Error("User is already registered");
-	}
+	if(userErr) throw new Error(userErr.message);
+	if(!user) throw new Error("User not found");
+	if(user.email_id) throw new Error("User is already registered");
 
 	const otp = generateOtp();
 	const otpHash = hashOtp(otp);
@@ -39,9 +33,7 @@ export const register = async (regData: RegisterPayload) => {
 		value: otpHash, 
 		type: "register"
 	});
-	if(otpErr){
-		throw new Error(otpErr.message);
-	}
+	if(otpErr) throw new Error(otpErr.message);
 
 	await sendEmail(user.full_name, regData.email, otp);
 	return {
@@ -52,12 +44,8 @@ export const register = async (regData: RegisterPayload) => {
 
 export const login = async (loginData: LoginPayload) => {
 	const { data: user, error: userErr } = await authRepository.getUserByEmail(loginData.email);
-	if(userErr){
-		throw new Error(userErr.message);
-	}
-	if(!user){
-		throw new Error("User is not Resgistered");
-	}
+	if(userErr) throw new Error(userErr.message);
+	if(!user) throw new Error("User is not Resgistered");
 
 	const otp = generateOtp();
 	const otpHash = hashOtp(otp);
@@ -68,9 +56,7 @@ export const login = async (loginData: LoginPayload) => {
 		value: otpHash, 
 		type: "login"
 	});
-	if(otpErr){
-		throw new Error(otpErr.message);
-	}
+	if(otpErr) throw new Error(otpErr.message);
 
 	await sendEmail(user.full_name, loginData.email, otp);
 	return {
@@ -83,12 +69,8 @@ export const otpVerification = async (otpData: OtpVerify) => {
 	const { data: otpSession, error: otpErr } = await authRepository.getOtpStatus(otpData.session_id);
 	const now = new Date();
 
-	if(otpErr){
-		throw new Error(otpErr.message);
-	}
-	if(!otpSession){
-		throw new Error("User not found");
-	}
+	if(otpErr) throw new Error(otpErr.message);
+	if(!otpSession) throw new Error("User not found");
 	if(otpSession.otp_attempts === otpSession.max_otp_attempts){
 		await authRepository.updateOtpStatus(otpSession.id, {
 			status: "expired"
@@ -121,13 +103,9 @@ export const otpVerification = async (otpData: OtpVerify) => {
 		: authRepository.loginUser(otpSession.user_id);
 	const { data: user, error: userErr } = await actionUser;
 
-	if(userErr){
-		throw new Error(userErr.message);
-	}
-	if(!user){
-		throw new Error("User not found");
-	}
-
+	if(userErr) throw new Error(userErr.message);
+	if(!user) throw new Error("User not found");
+	
 	const refresh_token = generateRefreshToken({ 
 		id: user.id 
 	});
@@ -137,18 +115,20 @@ export const otpVerification = async (otpData: OtpVerify) => {
 		extended_roles: user.extended_roles
 	});
 
-	return {user, tokens: {access_token, refresh_token}};
+	return {
+		user, 
+		tokens: {
+			access_token, 
+			refresh_token
+		}
+	};
 }
 
 export const resendOtp = async (otpData: OtpResend) => {
 	const { data: otpSession, error: otpErr } = await authRepository.getOtpStatus(otpData.session_id);
 
-	if(otpErr){
-		throw new Error(otpErr.message);
-	}
-	if(!otpSession){
-		throw new Error("User not found");
-	}
+	if(otpErr) throw new Error(otpErr.message);
+	if(!otpSession) throw new Error("User not found");
 	if(otpSession.resend_count === otpSession.max_resend){
 		await authRepository.updateOtpStatus(otpSession.id, {
 			status: "expired"
@@ -166,6 +146,7 @@ export const resendOtp = async (otpData: OtpResend) => {
 		updated_at: new Date(),
 		expires_at: new Date(Date.now() + 3 * 60 * 1000)
 	});
+
 	await sendEmail(otpSession.users.full_name, otpSession.email_id, otp);
 	return {
 		session_id: otpSession.id, 
@@ -176,12 +157,8 @@ export const resendOtp = async (otpData: OtpResend) => {
 export const changeEmail = async (otpData: OtpChangeEmail) => {
 	const { data: otpSession, error: otpErr } = await authRepository.getOtpStatus(otpData.session_id);
 
-	if(otpErr){
-		throw new Error(otpErr.message);
-	}
-	if(!otpSession){
-		throw new Error("User not found");
-	}
+	if(otpErr) throw new Error(otpErr.message);
+	if(!otpSession) throw new Error("User not found");
 	if(otpSession.change_email_count === otpSession.max_email_change){
 		await authRepository.updateOtpStatus(otpSession.id, {
 			status: "expired"
@@ -213,12 +190,8 @@ export const refreshTokens = async (token: string) => {
 	const decode = verifyRefreshToken(token);
 
 	const { data: user, error } = await authRepository.getUserById(decode.id);
-	if(error){
-		throw new Error(error.message);
-	}
-	if(!user){
-		throw new Error("User not found");
-	}
+	if(error) throw new Error(error.message);
+	if(!user) throw new Error("User not found");
 
 	const refresh_token = generateRefreshToken({ 
 		id: user.id 
@@ -228,5 +201,11 @@ export const refreshTokens = async (token: string) => {
 		role: user.base_role,
 		extended_roles: user.extended_roles
 	});
-	return { user, tokens: { access_token, refresh_token } };
+	return { 
+		user, 
+		tokens: { 
+			access_token, 
+			refresh_token 
+		} 
+	};
 }

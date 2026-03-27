@@ -7,9 +7,7 @@ export const getDepartments = async () => {
 		error: departmentsErr 
 	} = await departmentRepository.getDepartments();
 
-    if(departmentsErr){
-        throw new Error(departmentsErr.message);
-    }
+    if(departmentsErr) throw new Error(departmentsErr.message);
     return departments;
 }
 
@@ -19,8 +17,6 @@ export const createDepartment = async (department: CreateDepartment) => {
 		error: departmentErr 
 	} = await departmentRepository.createDepartment(department);
 
-    if(departmentErr){
-        throw new Error(departmentErr.message);
-    }
+    if(departmentErr) throw new Error(departmentErr.message);
     return createdDepartment;
 }

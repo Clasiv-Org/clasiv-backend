@@ -34,9 +34,7 @@ const drive = google.drive({
 
 
 export const getFolder = async (folder_Id: string) => {
-	if(!folder_Id){
-        throw new Error("Folder ID is required");
-    }
+	if(!folder_Id) throw new Error("Folder ID is required");
 
 	const fileRes = await drive.files.list({
 		q: `'${folder_Id}' in parents and trashed = false`,
@@ -47,9 +45,7 @@ export const getFolder = async (folder_Id: string) => {
 }
 
 export const getFolders = async () => {
-	if(!SHARED_DRIVE_ID){
-        throw new Error("Folder ID is required");
-    }
+	if(!SHARED_DRIVE_ID) throw new Error("Folder ID is required");
 
 	const fileRes = await drive.files.list({
 		q: `'${SHARED_DRIVE_ID}' in parents and trashed = false`,
