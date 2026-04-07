@@ -1,24 +1,16 @@
-import { BrevoClient }  from "@getbrevo/brevo";
+import {
+	brevo,
+    clasivEmail,
+    otpExpiryTime,
+    year,
+} from "@/config/brevo";
 import { capitalizeWords } from "@/utils/string";
-
-const BREVO_API_KEY = process.env.BREVO_API_KEY as string;
-const CLASIV_EMAIL = process.env.CLASIV_EMAIL as string;
-const OTP_EXPIRY_TIME = process.env.OTP_EXPIRY_TIME as string;
-const YEAR = new Date().getFullYear();
-
-if(!BREVO_API_KEY || !CLASIV_EMAIL){
-    throw new Error("BREVO_API_KEY is not defined");
-}
-
-const brevo = new BrevoClient({
-    apiKey: BREVO_API_KEY
-})
 
 export const sendEmail = async (name: string, email: string, otp: string) => {
 	const transacEmail = {
 		sender: { 
 			name: "Clasiv", 
-			email: CLASIV_EMAIL 
+			email: clasivEmail 
 		},
 		to: [{ 
 				name: capitalizeWords(name),
@@ -84,7 +76,7 @@ export const sendEmail = async (name: string, email: string, otp: string) => {
 								<!-- Expiry -->
 								<tr>
 									<td style="font-size:14px; color:#555555;">
-										This OTP is valid for the next <strong>${OTP_EXPIRY_TIME} minutes</strong>.
+										This OTP is valid for the next <strong>${otpExpiryTime} minutes</strong>.
 									</td>
 								</tr>
 
@@ -103,7 +95,7 @@ export const sendEmail = async (name: string, email: string, otp: string) => {
 								<!-- Footer -->
 								<tr>
 									<td style="font-size:12px; color:#AAAAAA; text-align:center;">
-										© ${YEAR} Clasiv. All rights reserved.
+										© ${year} Clasiv. All rights reserved.
 									</td>
 								</tr>
 
