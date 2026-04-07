@@ -16,8 +16,8 @@ export const createUser = async (req: Request, res: Response) => {
 
 export const getUsers = async (req: Request, res: Response) => {
 	try {
-        const {page, limit} = req.pagination!;
-        const users = await userService.getUsers(page, limit);
+        const query = req.pagination!;
+        const users = await userService.getUsers(query);
         res.status(200).json(users);
 	} catch (error) {
 		if(error instanceof Error)

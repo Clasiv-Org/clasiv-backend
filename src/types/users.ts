@@ -3,6 +3,7 @@ import {
     BaseRoleEnum,
     ExtendedRoleEnum,
 } from "@/types/roles";
+import { DepartmentAbbrvEnum } from "./department";
   
 export const UserSchema = z.object({
 	id: z.string(),
@@ -19,6 +20,13 @@ export const UserSchema = z.object({
 	base_role: z.string(),
 	extended_roles: z.array(z.string()),
 });  
+
+export const BaseGetUserSchema = z.object({
+	page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(10),
+    base_role: BaseRoleEnum.optional(),
+	department: DepartmentAbbrvEnum.optional(),
+});
   
 export const BaseCreateUserSchema = z.object({
 	full_name: z.string(),
@@ -75,6 +83,7 @@ export const UpdateSelfSchema = z.object({
 });
 
 export type User = z.infer<typeof UserSchema>;
+export type BaseGetUser = z.infer<typeof BaseGetUserSchema>;
 export type CreateUser = z.infer<typeof CreateUserSchema>;
 export type UpdateUser = z.infer<typeof UpdateUserSchema>;
 export type UpdateSelf = z.infer<typeof UpdateSelfSchema>;

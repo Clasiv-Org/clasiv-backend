@@ -1,10 +1,13 @@
 import * as userRepository from "@/modules/users/users.repository";
+import * as departmentRepository from "@/modules/departments/departments.repository";
 import { 
 	CreateUser, 
 	UpdateUser, 
-    UpdateSelf, 
+    UpdateSelf,
+    BaseGetUser, 
 } from "@/types/users";
 import { RoleMap } from "@/types/roles";
+import { DepartmentAbbrvMap } from "@/types/department";
 
 export const createUser = async (user: CreateUser) => {
 	const { data: roles, error: rolesErr } = await userRepository.getRoles();
@@ -22,9 +25,24 @@ export const createUser = async (user: CreateUser) => {
     return createdUser;
 }
 
-export const getUsers = async (page: number, limit: number) => {
-	const offset = (page - 1) * limit;
-    const { data: users, error: usersErr } = await userRepository.getUsers(limit, offset);
+export const getUsers = async (query: BaseGetUser) => {
+	const { data: roles, error: rolesErr } = await userRepository.getRoles();
+	if(rolesErr) throw new Error(rolesErr.message);
+
+	const roleMap = roles.reduce((acc, r) => {
+		acc[r.role_name as keyof RoleMap] = r.role_id;
+		return acc;
+	}, {} as RoleMap);
+
+	const { data: departments, error: departmentsErr } = await departmentRepository.getDepartments();
+	if(departmentsErr) throw new Error(departmentsErr.message);
+
+    const departmentMap = departments.reduce((acc, d) => {
+        acc[d.department_abbrv as keyof DepartmentAbbrvMap] = d.id;
+        return acc;
+    }, {} as DepartmentAbbrvMap);
+
+    const { data: users, error: usersErr } = await userRepository.getUsers(query, roleMap, departmentMap);
     if(usersErr) throw new Error(usersErr.message);
     if(!users) throw new Error("Users not found");
 

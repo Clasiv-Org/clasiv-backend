@@ -2,7 +2,8 @@ import {
 	User, 
 	CreateUser, 
 	UpdateUser, 
-    UpdateSelf, 
+    UpdateSelf,
+    BaseGetUser, 
 } from "@/types/users";
 import {
     Role,
@@ -12,6 +13,7 @@ import {
 	createClient, 
 	PostgrestSingleResponse 
 } from "@supabase/supabase-js";
+import { DepartmentAbbrvMap } from "@/types/department";
 
 const SUPABASE_URL = process.env.SUPABASE_URL as string;
 const SUPABASE_KEY = process.env.SUPABASE_KEY as string;
@@ -32,12 +34,21 @@ export const getRoles = async (): Promise<PostgrestSingleResponse<Role[]>> => {
 }
 
 export const getUsers = async (
-	limit: number, 
-	offset: number
+	query: BaseGetUser,
+	roleMap: RoleMap,
+	departmentMap: DepartmentAbbrvMap
 ): Promise<PostgrestSingleResponse<User[]>> => {
-	return await supabase.rpc("get_users_paginated", {
-		_limit: limit,
-		_offset: offset
+    const offset = (query.page - 1) * query.limit;
+	return await supabase.rpc("get_users", {
+		_limit: query.limit,
+		_offset: offset,
+		_role_id: query.base_role 
+			? roleMap[query.base_role]
+            : null,
+        _department_id: query.department 
+			? departmentMap[query.department]
+			: null
+
 	});
 }
 
