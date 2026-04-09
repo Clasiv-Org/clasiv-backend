@@ -26,20 +26,7 @@ export const activate = async (activateData: ActivationPayload) => {
 	if(!user) throw new Error("User not found");
 	if(user.email_id) throw new Error("User is already activated");
 
-	const otp = generateOtp();
-	const otpHash = hashOtp(otp);
-
-	const { data: otpSession, error: otpErr } = await authRepository.setOtpStatus({
-		user_id: user.id, 
-		email_id: user.email_id, 
-		value: otpHash, 
-		type: "register"
-	});
-	if(otpErr) throw new Error(otpErr.message);
-
-	await sendEmail(user.full_name, user.email_id, otp);
 	return {
-		session_id: otpSession.id, 
 		full_name: user.full_name
 	};
 }

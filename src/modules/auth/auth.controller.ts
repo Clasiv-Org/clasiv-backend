@@ -6,13 +6,9 @@ import * as authService from "@/modules/auth/auth.service";
 
 export const activate = async (req: Request, res: Response) => {
 	try {
-		const { 
-			session_id, 
-			full_name		
-		} = await authService.activate(req.body);
+		const { full_name } = await authService.activate(req.body);
 		res.status(200).json({ 
-			message: "OTP sent!",
-			session_id,
+			message: "Account found!",
 			full_name
 		});
 	} catch (error) {
