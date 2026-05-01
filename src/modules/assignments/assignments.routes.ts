@@ -12,4 +12,9 @@ router.get("/",
     assignmentController.getAssignments
 );
 
+router.get("/:id", 
+    validator(GetAssignmentPayloadSchema),
+    assignmentController.getAssignment
+);
+
 export default router;

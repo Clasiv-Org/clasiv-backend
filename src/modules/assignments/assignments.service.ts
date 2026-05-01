@@ -5,3 +5,10 @@ export const getAssignments = async () => {
 
     return assignments;
 }
+
+export const getAssignment = async (id: string) => {
+    const assignment = await assignmentsRepository.getAssignment(id);
+	if(!assignment) throw new Error("Assignment not found");
+
+    return assignment;
+}

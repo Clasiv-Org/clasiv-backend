@@ -16,3 +16,12 @@ export const getAssignments = async (): Promise<Assignments> => {
 	if (!raw) return [];
 	return AssignmentsSchema.parse(raw);
 };
+
+export const getAssignment = async (assignmentId: string): Promise<Assignment> => {
+	const result = await db.execute(sql`
+		SELECT get_assignment(${assignmentId})	
+	`);
+
+	const raw = result.rows[0]?.get_assignment;
+	return AssignmentSchema.parse(raw);
+};
