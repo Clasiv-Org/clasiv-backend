@@ -9,21 +9,25 @@ import {
 } from "@/types/assignments";
 
 export const createAssignment = async (userId: string, assignmentData: CreateAssignmentPayload): Promise<Assignment> => {
-    const result = await db.execute(sql`
-        SELECT create_assignment(
-			${userId}, 
-            ${assignmentData.collegeCourseSubjectId},
-            ${assignmentData.title},
-            ${assignmentData.dueAt},
-            ${assignmentData.expiresAt},
-            ${assignmentData.description},
-            ${assignmentData.maxMarks},
-            ${assignmentData.attachmentUrl}
-		)
-    `);
+	const filePatternSql = assignmentData.filePattern 
+		? sql.raw(`ARRAY[${assignmentData.filePattern.join(',')}]::smallint[]`)
+		: sql`NULL`;
 
-    const raw = result.rows[0]?.create_assignment;
-    return AssignmentSchema.parse(raw);
+	const result = await db.execute(sql`
+		SELECT create_assignment(
+			${userId}, 
+			${assignmentData.collegeCourseSubjectId},
+			${assignmentData.title},
+			${assignmentData.dueAt},
+			${assignmentData.expiresAt},
+			${assignmentData.description ?? null},
+			${assignmentData.maxMarks ?? null},
+			${assignmentData.attachmentUrl ?? null},
+			${filePatternSql}
+		)
+	`);
+	const raw = result.rows[0]?.create_assignment;
+	return AssignmentSchema.parse(raw);
 }
 
 export const getAssignments = async (): Promise<Assignments> => {

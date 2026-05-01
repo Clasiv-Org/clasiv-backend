@@ -3,7 +3,6 @@ import * as assignmentController from "@/modules/assignments/assignments.control
 import authentication from "@/middleware/global.authentication";
 import validator from "@/middleware/global.validator";
 import { 
-	GetAssignmentPayloadSchema, 
     CreateAssignmentSchema
 } from "@/types/assignments";
 
@@ -19,7 +18,6 @@ router.get("/",
     assignmentController.getAssignments
 );
 router.get("/:id", 
-    validator(GetAssignmentPayloadSchema),
     assignmentController.getAssignment
 );
 

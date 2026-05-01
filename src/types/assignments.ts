@@ -37,6 +37,7 @@ export const CreateAssignmentSchema = z.object({
 	attachmentUrl: z.string().url().optional(),
 	dueAt: z.string().datetime(),
 	expiresAt: z.string().datetime(),
+	filePattern: z.array(z.number().int().min(1)).min(1).optional(),
 }).refine(
 	(data) => new Date(data.expiresAt) > new Date(data.dueAt),
 	{
@@ -44,7 +45,6 @@ export const CreateAssignmentSchema = z.object({
 		path: ["expiresAt"],
 	}
 );
-
 
 export const AssignmentsSchema = z.array(AssignmentSchema);
 
