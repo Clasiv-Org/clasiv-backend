@@ -7,6 +7,7 @@ import jwt, {
 	TokenExpiredError, 
 } from "jsonwebtoken";
 export { hashPassword as hashToken } from "@/utils/password";
+export { verifyPassword as verifyToken } from "@/utils/password";
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET as string;

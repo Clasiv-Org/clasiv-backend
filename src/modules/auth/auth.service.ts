@@ -2,7 +2,8 @@ import {
 	generateRefreshToken,
 	verifyRefreshToken,
 	generateAccessToken,
-    hashToken
+    hashToken,
+    verifyToken
 } from "@/utils/token";
 import * as authRepository from "@/modules/auth/auth.repository";
 import { 
@@ -270,6 +271,11 @@ export const refreshTokens = async (token: string) => {
 
 	const user = await authRepository.getUserProfile(decode.id);
 	if(!user) throw new Error("User not found");
+
+	const refreshTokenSession = await authRepository.getRefreshToken(user.id);
+    if(!refreshTokenSession) throw new Error("Refresh token session not found");
+	const isValidToken = await verifyToken(token, refreshTokenSession.tokenHash);
+    if(!isValidToken) throw new Error("Invalid refresh token");
 
 	const refreshToken = generateRefreshToken({ 
 		id: user.id 

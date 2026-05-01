@@ -13,6 +13,7 @@ import { UserProfileSchema, type UserProfile } from "@/types/users";
 import { 
 	activationSessions, 
 	otpSessions, 
+	refreshTokens, 
 	users 
 } from "@/db/schemas";
 
@@ -129,13 +130,22 @@ export const loginUser = async (data: LoginRPCPayload): Promise<UserProfile> => 
 	return UserProfileSchema.parse(raw);
 }
 
+export const getRefreshToken = async (userId: string) => {
+    const result = await db
+        .select()
+        .from(refreshTokens)
+        .where(eq(refreshTokens.userId, userId));
+
+    return result[0] ?? null;
+}
+
 export const updateRefreshToken = async (userId: string, refreshTokenHash: string) => {
     const result = await db.execute(sql`
-        select update_refresh_token(
+        select update_refresh_token_and_get_user_profile(
             ${userId}, 
-            ${refreshTokenHash}
+			${refreshTokenHash}
         );
     `);
-    const raw = result.rows[0]?.update_refresh_token;
+    const raw = result.rows[0]?.update_refresh_token_and_get_user_profile;
     return raw;
 }
