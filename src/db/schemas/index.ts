@@ -9,6 +9,7 @@ export * from "./course";
 export * from "./courseSubject";
 export * from "./department";
 export * from "./enrollment";
+export * from "./filePatternChunk";
 export * from "./otpSession";
 export * from "./permission";
 export * from "./refreshToken";
