@@ -11,19 +11,7 @@ import type { DepartmentAbbrvMap } from "@/types/department";
 import * as mapper from "@/mappers/users";
 
 export const createUser = async (user: CreateUser) => {
-	const { data: roles, error: rolesErr } = await userRepository.getRoles();
-	if(rolesErr) throw new Error(rolesErr.message);
-
-	const roleMap = roles.reduce((acc, r) => {
-		acc[r.role_name as keyof RoleMap] = r.role_id;
-		return acc;
-	}, {} as RoleMap);
-
-    const { data: createdUser, error: userErr } = await userRepository.createUser(user, roleMap);
-    if(userErr) throw new Error(userErr.message);
-    if(!createdUser) throw new Error("User not created");
-
-    return createdUser;
+	return "Route Under Construction";
 }
 
 export const getUsers = async (query: BaseGetUser) => {
@@ -73,22 +61,9 @@ export const getUser = async (id: string) => {
 }
 
 export const updateUser = async (id: string, user: UpdateUser) => {
-	const { data: roles, error: rolesErr } = await userRepository.getRoles();
-	if(rolesErr) throw new Error(rolesErr.message);
-
-	const roleMap = roles.reduce((acc, r) => {
-		acc[r.role_name as keyof RoleMap] = r.role_id;
-		return acc;
-	}, {} as RoleMap);
-
-    const { data: updatedUser, error: userErr } = await userRepository.updateUser(id, user, roleMap);
-    if(userErr) throw new Error(userErr.message);
-    if(!updatedUser) throw new Error("User not found");
-
-    return updatedUser;
+	return "Route Under Construction";
 }
 
 export const deleteUser = async (user_id: string) => {
-    const { error: userErr } = await userRepository.deleteUser(user_id);
-    if(userErr) throw new Error(userErr.message);
+	return "Route Under Construction";
 }
