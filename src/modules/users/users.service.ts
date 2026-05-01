@@ -50,8 +50,7 @@ export const getUsers = async (query: BaseGetUser) => {
 }
 
 export const getSelf = async (id: string) => {
-	const { data: user, error: userErr } = await userRepository.getUserById(id);
-	if(userErr) throw new Error(userErr.message);
+	const user = await userRepository.getUserProfile(id);
 	if(!user) throw new Error("User not found");
 
     return user;

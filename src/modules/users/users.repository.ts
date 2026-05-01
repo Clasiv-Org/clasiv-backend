@@ -13,6 +13,12 @@ import type { DepartmentAbbrvMap } from "@/types/department";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import { supabase } from "@/config/supabase";
 
+export { getUserById } from "@/db/queries/getUserById";
+export { getUserByUserName } from "@/db/queries/getUserByUserName";
+export { getUserByEmail } from "@/db/queries/getUserByEmail";
+export { getUserByFullName } from "@/db/queries/getUserByFullName";
+export { getUserProfile } from "@/db/queries/getUserProfile";
+
 export const getRoles = async (): Promise<PostgrestSingleResponse<Role[]>> => {
 	return await supabase
 		.from("roles")
@@ -61,14 +67,6 @@ export const createUser = async (
 		_department_id: user.department_id ?? null,
 
 		_teacher_abbrv: user.base_role === "teacher" ? user.teacher_abbrv : null,
-	}).single();
-}
-
-export const getUserById = async (
-	id: string
-): Promise<PostgrestSingleResponse<User>> => {
-	return await supabase.rpc("get_user_by_id", {
-		_user_id: id
 	}).single();
 }
 
