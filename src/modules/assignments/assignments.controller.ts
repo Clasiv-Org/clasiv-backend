@@ -46,3 +46,25 @@ export const getAssignment = async (req: Request<{ id: string }>, res: Response)
             res.status(500).send(error.message);
     }
 }
+
+export const createSubmission = async (req: Request<{ id: string }>, res: Response) => {
+	try {
+		const uploadCredentials = await assignmentService.createSubmission(
+			req.params.id, 
+			req.user!.id, 
+			req.body.fileSize
+		);
+		res.status(201).json({
+			message: "Submission initiated successfully",
+            statusCode: 201,
+			upload: {
+				url: uploadCredentials.url,
+			},
+			submissionLogId: uploadCredentials.submissionLogId,
+			expiresIn: 180
+		});
+	} catch (error) {
+		if(error instanceof Error)
+			res.status(500).send(error.message);
+	}
+}

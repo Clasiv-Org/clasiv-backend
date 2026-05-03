@@ -46,8 +46,19 @@ export const CreateAssignmentSchema = z.object({
 	}
 );
 
+export const UploadSubmissionSchema = z.object({
+    fileSize: z.number().int().positive(),
+})
+
+export const AssignmentUploadLogSchema = z.object({
+	assignmentId: z.string().uuid(),
+	studentId: z.string().uuid(),
+	attachmentKey: z.string(),
+});
+
 export const AssignmentsSchema = z.array(AssignmentSchema);
 
 export type Assignment = z.infer<typeof AssignmentSchema>;
 export type Assignments = z.infer<typeof AssignmentsSchema>;
 export type CreateAssignmentPayload = z.infer<typeof CreateAssignmentSchema>;
+export type AssignmentUploadLogPayload = z.infer<typeof AssignmentUploadLogSchema>;

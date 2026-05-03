@@ -5,8 +5,33 @@ import {
 	type Assignments,
     AssignmentSchema,
     type Assignment,
-    type CreateAssignmentPayload
+    type CreateAssignmentPayload, 
+	type AssignmentUploadLogPayload
 } from "@/types/assignments";
+import { assignmentUploadLogs } from "@/db/schemas";
+
+export const createUploadLog = async (assgnmentData: AssignmentUploadLogPayload) => {
+    const result = await db
+		.insert(assignmentUploadLogs)
+        .values({
+            assignmentId: assgnmentData.assignmentId,
+            studentId: assgnmentData.studentId,
+			attachmentKey: assgnmentData.attachmentKey,
+			uploadedAt: new Date().toISOString(),
+            status: 'processing',
+		})
+        .returning();
+
+    return result[0] ?? null;
+}
+
+export const generateSubmissionKey = async (assignmentId: string, studentId: string): Promise<string> => {
+	const result = await db.execute(sql`
+		SELECT generate_submission_key(${assignmentId}, ${studentId})
+	`);
+	const raw = result.rows[0]?.generate_submission_key;
+    return raw as string;
+}
 
 export const createAssignment = async (userId: string, assignmentData: CreateAssignmentPayload): Promise<Assignment> => {
 	const filePatternSql = assignmentData.filePattern 

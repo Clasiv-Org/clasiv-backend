@@ -3,7 +3,8 @@ import * as assignmentController from "@/modules/assignments/assignments.control
 import authentication from "@/middleware/global.authentication";
 import validator from "@/middleware/global.validator";
 import { 
-    CreateAssignmentSchema
+    CreateAssignmentSchema,
+    UploadSubmissionSchema
 } from "@/types/assignments";
 
 const router = Router();
@@ -19,6 +20,10 @@ router.get("/",
 );
 router.get("/:id", 
     assignmentController.getAssignment
+);
+router.post("/:id/submissions",
+    validator(UploadSubmissionSchema),
+	assignmentController.createSubmission
 );
 
 export default router;
