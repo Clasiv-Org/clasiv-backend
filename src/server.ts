@@ -5,6 +5,9 @@ import type {
 } from 'express';
 import path from "path";
 import "dotenv/config";
+import swaggerUi from "swagger-ui-express";
+import swaggerSpec from "@/config/swagger";
+
 import usersRouter from "@/modules/users/users.routes";
 import authRouter from "@/modules/auth/auth.routes";
 import driveRouter from "@/modules/drive/drive.routes";
@@ -21,6 +24,11 @@ app.use(express.json());
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "public", "views"));
 app.use(express.static(path.join(__dirname, "public")));
+
+app.use("/docs", 
+	swaggerUi.serve, 
+	swaggerUi.setup(swaggerSpec)
+);
 
 app.use("/users", usersRouter);
 app.use("/auth", authRouter);
