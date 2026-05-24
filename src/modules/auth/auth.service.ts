@@ -33,7 +33,7 @@ export const activationInitiate = async (activationData: ActivationInitiatePaylo
 	if(!user) throw new AppError("User not found", 404);
 	if(user.activatedAt) throw new AppError("User is already activated", 409);
 
-	if(!user.passwordHash) throw new AppError("User has no password set", 401);
+	if(!user.passwordHash) throw new AppError("User has no password set", 500);
 	const isValidPassword = await verifyPassword(activationData.password, user.passwordHash);
     if(!isValidPassword) throw new AppError("Invalid password", 401);
 
@@ -76,7 +76,7 @@ export const activationOtpVerify = async (activationData: ActivationOtpVerifyPay
     if(!activationSession) throw new AppError("Activation Session not found", 404);
 
 	const data = await authRepository.getOtpSession(activationSession.otpSessionId!);
-	if(!data) throw new AppError("OTP Session not found", 404);
+	if(!data) throw new AppError("OTP Session not found", 500);
 	const { otp_sessions: otpSession } = data;
 	const now = new Date();
 
@@ -119,7 +119,7 @@ export const activationOtpResend = async (activationData: ActivationOtpResendPay
     if(!activationSession) throw new AppError("Activation Session not found", 404);
 
 	const data = await authRepository.getOtpSession(activationSession.otpSessionId!);
-	if(!data) throw new AppError("OTP Session not found", 404);
+	if(!data) throw new AppError("OTP Session not found", 500);
 	const { otp_sessions: otpSession, users: user} = data;
 
 	if(otpSession.status === "used") throw new AppError("OTP already used", 409);
@@ -153,7 +153,7 @@ export const activationOtpChangeEmail = async (activationData: ActivationOtpChan
     if(!activationSession) throw new AppError("Activation Session not found", 404);
 
 	const data = await authRepository.getOtpSession(activationSession.otpSessionId!);
-	if(!data) throw new AppError("OTP Session not found", 404);
+	if(!data) throw new AppError("OTP Session not found", 500);
 	const { otp_sessions: otpSession, users: user}= data;
 
 	if(otpSession.status === "used") throw new AppError("OTP already used", 409);
