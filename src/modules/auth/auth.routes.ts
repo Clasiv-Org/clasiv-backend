@@ -530,9 +530,9 @@ router.post("/activation/otp/change-email",
  *                   type: number
  *                   example: 200
  *                 tokens:
- *                   $ref: '#/components/schemas/TokenSchema'
+ *                   $ref: '#/components/schemas/Token'
  *                 user:
- *                   $ref: '#/components/schemas/UserSafe'
+ *                   $ref: '#/components/schemas/UserProfileSafe'
  *       400:
  *         description: Validation error
  *         content:
@@ -619,9 +619,9 @@ router.post("/activation/complete",
  *                   type: number
  *                   example: 200
  *                 tokens:
- *                   $ref: '#/components/schemas/TokenSchema'
+ *                   $ref: '#/components/schemas/Token'
  *                 user:
- *                   $ref: '#/components/schemas/UserSafe'
+ *                   $ref: '#/components/schemas/UserProfileSafe'
  *       400:
  *         description: Validation error
  *         content:
@@ -706,9 +706,9 @@ router.post("/login",
  *                   type: number
  *                   example: 200
  *                 tokens:
- *                   $ref: '#/components/schemas/TokenSchema'
+ *                   $ref: '#/components/schemas/Token'
  *                 user:
- *                   $ref: '#/components/schemas/UserSafe'
+ *                   $ref: '#/components/schemas/UserProfileSafe'
  *       400:
  *         description: Validation error
  *         content:
