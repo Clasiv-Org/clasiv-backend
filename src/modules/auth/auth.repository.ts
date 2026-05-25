@@ -152,11 +152,11 @@ export const createRefreshToken = async (userId: string, tokenHash: string) => {
     return result[0] ?? null;
 }
 
-export const getRefreshToken = async (userId: string) => {
+export const getRefreshToken = async (id: string) => {
     const result = await db
         .select()
         .from(refreshTokens)
-        .where(eq(refreshTokens.userId, userId));
+        .where(eq(refreshTokens.id, id));
 
     return result[0] ?? null;
 }
