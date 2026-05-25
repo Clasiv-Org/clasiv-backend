@@ -275,38 +275,46 @@ export const login = async (loginData: LoginPayload) => {
 };
 
 export const refreshTokens = async (token: string) => {
-	const decode = verifyRefreshToken(token);
+    const decode = verifyRefreshToken(token);
 
-	const user = await authRepository.getUserProfile(decode.id);
-	if(!user) throw new AppError("User not found", 404);
-
-	const refreshTokenSession = await authRepository.getRefreshToken(user.id);
+    const refreshTokenSession = await authRepository.getRefreshToken(decode.id);
     if(!refreshTokenSession) throw new AppError("Refresh token session not found", 404);
-	const isValidToken = verifyTokenHash(token, refreshTokenSession.tokenHash);
+    if(refreshTokenSession.isRevoked) throw new AppError("Refresh token revoked", 401);
+    if(new Date(refreshTokenSession.expiresAt) < new Date()) throw new AppError("Refresh token expired", 401);
+
+    const isValidToken = verifyTokenHash(token, refreshTokenSession.tokenHash);
     if(!isValidToken) throw new AppError("Invalid refresh token", 401);
 
-	const refreshToken = generateRefreshToken({ 
-		id: user.id 
-	});
+    const newRefreshToken = await authRepository.createRefreshToken(decode.userId, "pending");
+    if(!newRefreshToken) throw new AppError("Failed to create refresh token", 500);
+
+    const refreshToken = generateRefreshToken({
+        id:     newRefreshToken.id,
+        userId: newRefreshToken.userId
+    });
     const refreshTokenHash = hashToken(refreshToken);
 
-	await authRepository.updateRefreshToken(
-		user.id, 
-		refreshTokenHash
-	);
+    const { success, error, data: user } = await authRepository.updateRefreshToken(
+        decode.id,
+        newRefreshToken.id,
+        refreshTokenHash
+    );
+    if(!success) handleAuthRPCError(error);
+	if(!user) throw new AppError("User not found", 500);
 
-	const accessToken = generateAccessToken({
-		id: user.id,
-		role: user.baseRole,
-		extendedRoles: user.extentionRoles,
-		permissions: user.permissions
-	});
+    const accessToken = generateAccessToken({
+        id:            user.id,
+        role:          user.baseRole,
+        extendedRoles: user.extentionRoles,
+        permissions:   user.permissions
+    });
 
-	return {
-		user: mapper.cleanUserProfile(user),
-		tokens: {
-			accessToken,
-			refreshToken
+    return {
+        user:   mapper.cleanUserProfile(user),
+        tokens: { 
+			accessToken, 
+			refreshToken 
 		}
-	};
+    };
 }
+

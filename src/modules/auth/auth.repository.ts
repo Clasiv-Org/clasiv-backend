@@ -12,8 +12,6 @@ import type {
 import { 
 	type UserProfileRPCResponse, 
 	UserProfileRPCResponseSchema, 
-	UserProfileSchema, 
-	type UserProfile 
 } from "@/types/users";
 import { 
 	activationSessions, 
@@ -163,13 +161,21 @@ export const getRefreshToken = async (userId: string) => {
     return result[0] ?? null;
 }
 
-export const updateRefreshToken = async (userId: string, refreshTokenHash: string) => {
+export const updateRefreshToken = async (
+    oldRefreshTokenId: string,
+    newRefreshTokenId: string,
+    refreshTokenHash:  string
+): Promise<UserProfileRPCResponse> => {
     const result = await db.execute(sql`
-        select update_refresh_token_and_get_user_profile(
-            ${userId}, 
-			${refreshTokenHash}
+        SELECT update_refresh_token_and_get_user_profile(
+            ${oldRefreshTokenId},
+            ${newRefreshTokenId},
+            ${refreshTokenHash}
         );
     `);
-    const raw = result.rows[0]?.update_refresh_token_and_get_user_profile;
-    return raw;
+
+    const raw    = result.rows[0]?.update_refresh_token_and_get_user_profile;
+    const parsed = UserProfileRPCResponseSchema.parse(raw);
+    return parsed;
 }
+
