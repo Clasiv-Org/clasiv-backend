@@ -9,7 +9,12 @@ import type {
 	LoginRPCPayload, 
     UpdateActivationSession
 } from "@/types/auth";
-import { UserProfileSchema, type UserProfile } from "@/types/users";
+import { 
+	type UserProfileRPCResponse, 
+	UserProfileRPCResponseSchema, 
+	UserProfileSchema, 
+	type UserProfile 
+} from "@/types/users";
 import { 
 	activationSessions, 
 	otpSessions, 
@@ -103,19 +108,22 @@ export const deleteOtpSession = async (sessionId: string) => {
     return result[0] ?? null;
 };
 
-export const setupUser = async (data: ActivationCompleteRPCPayload): Promise<UserProfile> => {
-	const result = await db.execute(sql`
-		select activate_user_and_get_user_profile(
-			${data.userId}, 
-			${data.emailId}, 
-			${data.passwordHash}, 
+export const setupUser = async (data: ActivationCompleteRPCPayload): Promise<UserProfileRPCResponse> => {
+    const result = await db.execute(sql`
+        SELECT activate_user_and_get_user_profile(
+            ${data.userId},
+            ${data.refreshTokenId},
+            ${data.emailId},
+            ${data.passwordHash},
             ${data.refreshTokenHash},
-			${data.userName ?? null}, 
-			${data.phoneNo ?? null}
-		);
-	`);
-	const raw = result.rows[0]?.activate_user_and_get_user_profile;
-	return UserProfileSchema.parse(raw);
+            ${data.userName ?? null},
+            ${data.phoneNo ?? null}
+        );
+    `);
+
+    const raw = result.rows[0]?.activate_user_and_get_user_profile;
+    const parsed = UserProfileRPCResponseSchema.parse(raw);
+    return parsed;
 }
 
 export const loginUser = async (data: LoginRPCPayload): Promise<UserProfile> => {

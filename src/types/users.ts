@@ -5,7 +5,8 @@ import {
     BaseRoleEnum,
     ExtendedRoleEnum,
 } from "@/types/roles";
-import { DepartmentAbbrvEnum } from "./department";
+import { DepartmentAbbrvEnum } from "@/types/department";
+import { RPCResponseSchema } from "@/types/db";
   
 const AbbrEntitySchema = z.object({
 	name: z.string(),
@@ -162,9 +163,11 @@ export const UpdateSelfSchema = z.object({
     phoneNo: z.string().trim().length(10).regex(/^\d+$/).optional(),
 });
 
-export const UpdateSelfRPCSchema = z.object({
-    success: z.boolean(),
-    error: z.string().nullable(),
+export const UserProfileRPCResponseSchema = RPCResponseSchema.extend({
+    data: UserProfileSchema.nullable(),
+});
+
+export const UpdateSelfRPCSchema = RPCResponseSchema.extend({
     data: UserProfileSchema.nullable(),
 });
 
@@ -182,4 +185,5 @@ export type CreateUser		= z.infer<typeof CreateUserSchema>;
 export type UpdateUser		= z.infer<typeof UpdateUserSchema>;
 export type UpdateSelf		= z.infer<typeof UpdateSelfSchema>;
 
+export type UserProfileRPCResponse	= z.infer<typeof UserProfileRPCResponseSchema>;
 export type UpdateSelfRPCResponse	= z.infer<typeof UpdateSelfRPCSchema>;

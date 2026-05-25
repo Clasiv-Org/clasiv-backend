@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const RefreshTokenSchema = z.object({
 	id: z.string().uuid(),
+	userId: z.string().uuid(),
 });
 
 export const AccessTokenSchema = z.object({
@@ -47,6 +48,7 @@ export const ActivationCompleteRPCSchema = ActivationCompleteSchema.omit({
 }).extend({
 	userId: z.string().uuid(),
     passwordHash: z.string(),
+    refreshTokenId: z.string().uuid(),
 	refreshTokenHash: z.string(),
 });
 

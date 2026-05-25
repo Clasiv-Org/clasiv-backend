@@ -27,6 +27,7 @@ import type {
     ActivationCompletePayload,
     LoginPayload,
 } from "@/types/auth";
+import { handleAuthRPCError } from "@/mappers/errors";
 
 export const activationInitiate = async (activationData: ActivationInitiatePayload) => {
 	const user = await authRepository.getUserByUserName(activationData.userName);
@@ -186,43 +187,47 @@ export const activationOtpChangeEmail = async (activationData: ActivationOtpChan
 }
 
 export const activationComplete = async (activationData: ActivationCompletePayload) => {
-	const activationSession = await authRepository.getActivationSession(activationData.activationSessionId);
+    const activationSession = await authRepository.getActivationSession(activationData.activationSessionId);
     if(!activationSession) throw new AppError("Activation Session not found", 404);
     if(activationSession.status !== "otp_verified") throw new AppError("Email not verified", 403);
 
-	await authRepository.updateActivationSession(activationSession.id, {
-        status: "completed" 
-	});
+    await authRepository.updateActivationSession(activationSession.id, {
+        status: "completed"
+    });
 
-	const passwordHash = await hashPassword(activationData.password);
-	const refreshToken = generateRefreshToken({ 
-		id: activationSession.userId
-	});
-	const refreshTokenHash = hashToken(refreshToken);
+    const passwordHash = await hashPassword(activationData.password);
 
-	const user = await authRepository.setupUser({
-		userId: activationSession.userId,
-        emailId: activationData.emailId,
-        passwordHash: passwordHash,
-        userName: activationData.userName,
-        phoneNo: activationData.phoneNo,
-		refreshTokenHash: refreshTokenHash
-	});
-    if(!user) throw new AppError("User not found", 500);
+    const pendingToken = await authRepository.createRefreshToken(activationSession.userId, "pending");
+    if(!pendingToken) throw new AppError("Failed to create refresh token", 500);
 
-	const accessToken = generateAccessToken({
-		id: user.id,
-		role: user.baseRole,
-		extendedRoles: user.extentionRoles,
-		permissions: user.permissions
-	});
+    const refreshToken = generateRefreshToken({
+        id:     pendingToken.id,
+        userId: activationSession.userId
+    });
+    const refreshTokenHash = hashToken(refreshToken);
 
-	return {
-		user: mapper.cleanUserProfile(user), 
-        tokens: {
-            accessToken,
-            refreshToken
-        }
+    const { success, error, data: updatedUser } = await authRepository.setupUser({
+        userId:           activationSession.userId,
+        refreshTokenId:   pendingToken.id,
+        emailId:          activationData.emailId,
+        passwordHash:     passwordHash,
+        refreshTokenHash: refreshTokenHash,
+        userName:         activationData.userName ?? null,
+        phoneNo:          activationData.phoneNo  ?? null,
+    });
+    if(!success) handleAuthRPCError(error);
+    if(!updatedUser) throw new AppError("User not found", 500);
+
+    const accessToken = generateAccessToken({
+        id:            updatedUser.id,
+        role:          updatedUser.baseRole,
+        extendedRoles: updatedUser.extentionRoles,
+        permissions:   updatedUser.permissions
+    });
+
+    return {
+        user:   mapper.cleanUserProfile(updatedUser),
+        tokens: { accessToken, refreshToken }
     };
 }
 
