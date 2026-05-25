@@ -9,7 +9,7 @@ import { BaseGetUser } from "@/types/users";
 declare global {
     namespace Express {
         interface Request {
-            user?: RefreshTokenPayload | AccessTokenPayload;
+            user?: AccessTokenPayload;
 			pagination?: BaseGetUser;
 		}
     }
