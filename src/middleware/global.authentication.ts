@@ -4,11 +4,12 @@ import type {
 	NextFunction, 
 } from 'express';
 import { verifyAccessToken } from "@/utils/token";
+import { AppError } from "@/utils/error";
 
 const authentication = (req: Request, res: Response, next: NextFunction) => {
 	const authHeader = req.headers.authorization;
 	if(!authHeader) {
-		return res.status(401).json({message: "No Token"});
+		throw new AppError("No token", 401);
 	}
 
 	const token = authHeader?.split(" ")[1];
@@ -17,7 +18,7 @@ const authentication = (req: Request, res: Response, next: NextFunction) => {
 		req.user = decode;
         next();
 	} catch (error) {
-        return res.status(401).json({message: "Invalid Token"});
+        throw new AppError("Invalid token", 401);
 	}
 }
 
