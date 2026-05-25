@@ -232,43 +232,46 @@ export const activationComplete = async (activationData: ActivationCompletePaylo
 }
 
 export const login = async (loginData: LoginPayload) => {
-	const user =
-		loginData.userName
-		? await authRepository.getUserByUserName(loginData.userName)
-		: await authRepository.getUserByEmail(loginData.emailId!);
+    const user =
+        loginData.userName
+        ? await authRepository.getUserByUserName(loginData.userName)
+        : await authRepository.getUserByEmail(loginData.emailId!);
+    if(!user) throw new AppError("User not found", 404);
+    if(!user.emailId) throw new AppError("User is not activated", 403);
+    if(!user.passwordHash) throw new AppError("User has no password set", 500);
 
-	if(!user) throw new AppError("User not found", 404);
-	if(!user.emailId) throw new AppError("User is not activated", 403);
-	
-	if(!user.passwordHash) throw new AppError("User has no password set", 500);
-	const isValidPassword = await verifyPassword(loginData.password, user.passwordHash);
+    const isValidPassword = await verifyPassword(loginData.password, user.passwordHash);
     if(!isValidPassword) throw new AppError("Invalid password", 401);
 
-	const refreshToken = generateRefreshToken({ 
-		id: user.id 
-	});
+    const pendingToken = await authRepository.createRefreshToken(user.id, "pending");
+    if(!pendingToken) throw new AppError("Failed to create refresh token", 500);
+
+    const refreshToken = generateRefreshToken({
+        id:     pendingToken.id,
+        userId: user.id
+    });
     const refreshTokenHash = hashToken(refreshToken);
 
-	const updatedUser = await authRepository.loginUser({
-        userName: loginData.userName ?? null,
-        emailId: loginData.emailId ?? null,
-        refreshTokenHash: refreshTokenHash
-	});
+    const { success, error, data: updatedUser } = await authRepository.loginUser({
+        refreshTokenId:   pendingToken.id,
+        refreshTokenHash: refreshTokenHash,
+        userName:         loginData.userName  ?? null,
+        emailId:          loginData.emailId   ?? null,
+    });
+    if(!success) handleAuthRPCError(error);
+	if(!updatedUser) throw new AppError("User not found", 500);
 
-	const accessToken = generateAccessToken({
-		id: updatedUser.id,
-		role: updatedUser.baseRole,
-		extendedRoles: updatedUser.extentionRoles,
-		permissions: updatedUser.permissions
-	});
+    const accessToken = generateAccessToken({
+        id:            updatedUser.id,
+        role:          updatedUser.baseRole,
+        extendedRoles: updatedUser.extentionRoles,
+        permissions:   updatedUser.permissions
+    });
 
-	return {
-		user: mapper.cleanUserProfile(updatedUser),
-		tokens: {
-			accessToken,
-			refreshToken
-		}
-	};
+    return {
+        user:   mapper.cleanUserProfile(updatedUser),
+        tokens: { accessToken, refreshToken }
+    };
 };
 
 export const refreshTokens = async (token: string) => {

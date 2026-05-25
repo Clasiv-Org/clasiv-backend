@@ -81,6 +81,7 @@ export const LoginSchema = LoginBaseSchema.refine(
 );
 
 export const LoginRPCSchema = LoginBaseSchema.omit({ password: true }).extend({
+	refreshTokenId: z.string().uuid(),
 	refreshTokenHash: z.string(),
 });
 

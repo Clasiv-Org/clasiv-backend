@@ -126,16 +126,19 @@ export const setupUser = async (data: ActivationCompleteRPCPayload): Promise<Use
     return parsed;
 }
 
-export const loginUser = async (data: LoginRPCPayload): Promise<UserProfile> => {
-	const result = await db.execute(sql`
-		select login_user_and_get_user_profile(
+export const loginUser = async (data: LoginRPCPayload): Promise<UserProfileRPCResponse> => {
+    const result = await db.execute(sql`
+        SELECT login_user_and_get_user_profile(
+            ${data.refreshTokenId},
             ${data.refreshTokenHash},
-			${data.userName ?? null}, 
-			${data.emailId ?? null}
-		);
-	`);
-	const raw = result.rows[0]?.login_user_and_get_user_profile;
-	return UserProfileSchema.parse(raw);
+            ${data.userName  ?? null},
+            ${data.emailId   ?? null}
+        );
+    `);
+
+    const raw    = result.rows[0]?.login_user_and_get_user_profile;
+    const parsed = UserProfileRPCResponseSchema.parse(raw);
+    return parsed;
 }
 
 export const createRefreshToken = async (userId: string, tokenHash: string) => {
