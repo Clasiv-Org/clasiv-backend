@@ -130,6 +130,19 @@ export const loginUser = async (data: LoginRPCPayload): Promise<UserProfile> => 
 	return UserProfileSchema.parse(raw);
 }
 
+export const createRefreshToken = async (userId: string, tokenHash: string) => {
+    const result = await db
+        .insert(refreshTokens)
+        .values({
+            userId:    userId,
+            tokenHash: tokenHash,
+            expiresAt: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        })
+        .returning();
+
+    return result[0] ?? null;
+}
+
 export const getRefreshToken = async (userId: string) => {
     const result = await db
         .select()
