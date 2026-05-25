@@ -2,10 +2,28 @@ import * as assignmentRepository from "@/modules/assignments/assignments.reposit
 import type { CreateAssignmentPayload } from "@/types/assignments";
 import { generateUploadPresignedUrl } from "@/utils/s3";
 import { AppError } from "@/utils/error";
+import { handleAssignmentRPCError } from "@/mappers/errors";
+import { AccessTokenPayload } from "@/types/auth";
 
-export const createAssignment = async (userId: string, assignmentData: CreateAssignmentPayload) => {
-    const assignment = await assignmentRepository.createAssignment(userId, assignmentData);
-	if(!assignment) throw new AppError("Failed to create assignment", 500);
+export const createAssignment = async (user: AccessTokenPayload, assignmentData: CreateAssignmentPayload) => {
+    const userId = user.id;
+	const role = user.role;
+	const extentionRoles = user.extendedRoles;
+	const permissions = user.permissions;
+
+	if( role !== "admin" && 
+		role !== "teacher" && 
+		!extentionRoles.includes("teacher") && 
+		!extentionRoles.includes("cr")
+	) throw new AppError("Unauthorized", 403);
+
+	if( !permissions.includes("manage:all") && 
+		!permissions.includes("manage:assignments") && 
+		!permissions.includes("create:assignments")
+	) throw new AppError("Unauthorized", 403);
+
+    const {success, error, data: assignment} = await assignmentRepository.createAssignment(userId, assignmentData);
+	if(!success) handleAssignmentRPCError(error);
 
     return assignment;
 }
@@ -24,8 +42,8 @@ export const getFilePatterns = async () => {
 }
 
 export const getAssignment = async (id: string) => {
-    const assignment = await assignmentRepository.getAssignment(id);
-	if(!assignment) throw new AppError("Assignment not found", 404);
+    const {success, error, data: assignment} = await assignmentRepository.getAssignment(id);
+	if(!success) handleAssignmentRPCError(error);
 
     return assignment;
 }

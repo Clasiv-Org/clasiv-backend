@@ -15,8 +15,8 @@ import * as assignmentService from "@/modules/assignments/assignments.service";
 */
 export const createAssignment = async (req: Request, res: Response, next: NextFunction) => {
     try {
-		const userId = req.user!.id;
-        const assignment = await assignmentService.createAssignment(userId, req.body);
+		const user = req.user!;
+        const assignment = await assignmentService.createAssignment(user, req.body);
         res.status(201).json({
             message: "Assignment created successfully!",
             statusCode: 201,

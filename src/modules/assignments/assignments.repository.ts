@@ -3,13 +3,13 @@ import { sql } from "drizzle-orm";
 import { 
 	AssignmentsSchema,
 	type Assignments,
-    AssignmentSchema,
-    type Assignment,
+	AssignmentRPCResponseSchema,
+    type AssignmentRPCResponse,
     type CreateAssignmentPayload, 
 	type AssignmentUploadLogPayload,
-    type SubmissionKeyRPCResponse,
     SubmissionKeyRPCSchema,
-    type FilePattern, 
+    type SubmissionKeyRPCResponse,
+    type FilePattern,
 } from "@/types/assignments";
 import { assignmentUploadLogs, filePatternChunks } from "@/db/schemas";
 
@@ -44,7 +44,7 @@ export const generateSubmissionKey = async (assignmentId: string, studentId: str
     return parsed;
 }
 
-export const createAssignment = async (userId: string, assignmentData: CreateAssignmentPayload): Promise<Assignment> => {
+export const createAssignment = async (userId: string, assignmentData: CreateAssignmentPayload): Promise<AssignmentRPCResponse> => {
 	const filePatternSql = assignmentData.filePattern 
 		? sql.raw(`ARRAY[${assignmentData.filePattern.join(',')}]::smallint[]`)
 		: sql`NULL`;
@@ -54,16 +54,16 @@ export const createAssignment = async (userId: string, assignmentData: CreateAss
 			${userId}, 
 			${assignmentData.collegeCourseSubjectId},
 			${assignmentData.title},
-			${assignmentData.dueAt},
-			${assignmentData.expiresAt},
 			${assignmentData.description ?? null},
 			${assignmentData.maxMarks ?? null},
 			${assignmentData.attachmentUrl ?? null},
+			${assignmentData.dueAt},
+			${assignmentData.expiresAt},
 			${filePatternSql}
 		)
 	`);
 	const raw = result.rows[0]?.create_assignment;
-	return AssignmentSchema.parse(raw);
+	return AssignmentRPCResponseSchema.parse(raw);
 }
 
 export const getAssignments = async (): Promise<Assignments> => {
@@ -76,11 +76,11 @@ export const getAssignments = async (): Promise<Assignments> => {
 	return AssignmentsSchema.parse(raw);
 };
 
-export const getAssignment = async (assignmentId: string): Promise<Assignment> => {
+export const getAssignment = async (assignmentId: string): Promise<AssignmentRPCResponse> => {
 	const result = await db.execute(sql`
 		SELECT get_assignment(${assignmentId})	
 	`);
 
 	const raw = result.rows[0]?.get_assignment;
-	return AssignmentSchema.parse(raw);
+	return AssignmentRPCResponseSchema.parse(raw);
 };

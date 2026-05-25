@@ -1,15 +1,16 @@
-import { z } from 'zod';
+import { z } from "zod";
+import { RPCResponseSchema } from "@/types/db";
 
 export const FilePatternSchema = z.object({
 	id: z.number(),
-    name: z.string(),
+	name: z.string(),
 });
 
 const AssignedBySchema = z.object({
 	userName: z.string().nullable(),
 	fullName: z.string(),
 	baseRole: z.string(),
-	extentionRole: z.array(z.string()),
+	extentionRoles: z.array(z.string()),
 });
 
 const SubjectSchema = z.object({
@@ -17,21 +18,39 @@ const SubjectSchema = z.object({
 	code: z.string(),
 });
 
+const CollegeSchema = z.object({
+	name:  z.string(),
+	abbrv: z.string(),
+});
+
+const CourseSchema = z.object({
+	name:  z.string(),
+	abbrv: z.string(),
+});
+
 export const AssignmentSchema = z.object({
-	id: z.string().uuid(),
-	title: z.string(),
-	description: z.string().nullable(),
-	assignedBy: AssignedBySchema.nullable(),
-	subject: SubjectSchema,
-	maxMarks: z.number().nullable(),
+	id:            z.string().uuid(),
+	title:         z.string(),
+	description:   z.string().nullable(),
+	assignedBy:    AssignedBySchema.nullable(),
+	college:       CollegeSchema,
+	subject:       SubjectSchema,
+	course:        CourseSchema,
+	maxMarks:      z.number().nullable(),
 	attachmentUrl: z.string().nullable(),
-	createdAt: z.string(),
-	dueAt: z.string(),
-	expiresAt: z.string(),
+	filePattern:   z.array(z.string()),
+	isActive:      z.boolean(),
+	createdAt:     z.string(),
+	dueAt:         z.string(),
+	expiresAt:     z.string(),
+});
+
+export const AssignmentRPCResponseSchema = RPCResponseSchema.extend({
+	data: AssignmentSchema.nullable(),
 });
 
 export const GetAssignmentPayloadSchema = z.object({
-    id: z.string().uuid(),
+	id: z.string().uuid(),
 });
 
 export const CreateAssignmentSchema = z.object({
@@ -54,11 +73,11 @@ export const CreateAssignmentSchema = z.object({
 export const SubmissionKeyRPCSchema = z.object({
 	success: z.boolean(),
 	error: z.string().nullable(),
-    key: z.string().nullable(),
+	key: z.string().nullable(),
 });
 
 export const UploadSubmissionSchema = z.object({
-    fileSize: z.number().int().positive(),
+	fileSize: z.number().int().positive(),
 });
 
 export const AssignmentUploadLogSchema = z.object({
@@ -72,6 +91,7 @@ export const AssignmentsSchema = z.array(AssignmentSchema);
 export type FilePattern					= z.infer<typeof FilePatternSchema>;
 export type Assignment					= z.infer<typeof AssignmentSchema>;
 export type Assignments					= z.infer<typeof AssignmentsSchema>;
+export type AssignmentRPCResponse		= z.infer<typeof AssignmentRPCResponseSchema>;
 export type CreateAssignmentPayload		= z.infer<typeof CreateAssignmentSchema>;
 export type SubmissionKeyRPCResponse	= z.infer<typeof SubmissionKeyRPCSchema>;
 export type AssignmentUploadLogPayload	= z.infer<typeof AssignmentUploadLogSchema>;
