@@ -237,7 +237,7 @@ export const login = async (loginData: LoginPayload) => {
         ? await authRepository.getUserByUserName(loginData.userName)
         : await authRepository.getUserByEmail(loginData.emailId!);
     if(!user) throw new AppError("User not found", 404);
-    if(!user.emailId) throw new AppError("User is not activated", 403);
+    if(!user.activatedAt) throw new AppError("User is not activated", 403);
     if(!user.passwordHash) throw new AppError("User has no password set", 500);
 
     const isValidPassword = await verifyPassword(loginData.password, user.passwordHash);
