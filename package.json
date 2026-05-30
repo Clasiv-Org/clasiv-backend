@@ -17,6 +17,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1040.0",
     "@getbrevo/brevo": "^4.0.1",
     "@supabase/supabase-js": "^2.98.0",
+    "@upstash/redis": "^1.38.0",
     "argon2": "^0.44.0",
     "axios": "^1.13.6",
     "dotenv": "^17.3.1",
