@@ -1,9 +1,11 @@
-import { pgTable, foreignKey, unique, uuid, boolean, check, text, timestamp, serial, smallint, index, bigint, date, inet, primaryKey, integer, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, foreignKey, unique, uuid, boolean, check, text, timestamp, serial, smallint, index, bigint, date, inet, time, primaryKey, integer, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const activationStatus = pgEnum("activation_status", ['initiated', 'otp_sent', 'otp_verified', 'completed', 'expired'])
+export const dayOfWeek = pgEnum("day_of_week", ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'])
 export const genderType = pgEnum("gender_type", ['male', 'female', 'non_binary', 'prefer_not_to_say'])
 export const otpStatus = pgEnum("otp_status", ['used', 'pending', 'expired'])
+export const overrideType = pgEnum("override_type", ['rescheduled', 'teacher_swapped', 'relocated', 'cancelled', 'amended'])
 export const userStatus = pgEnum("user_status", ['unactivated', 'active', 'inactive', 'suspended', 'banned'])
 
 
@@ -347,6 +349,167 @@ export const departments = pgTable("departments", {
 		}).onUpdate("cascade").onDelete("restrict"),
 	unique("departments_name_key").on(table.name),
 	unique("departments_abbrv_key").on(table.abbrv),
+]);
+
+export const routines = pgTable("routines", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	collegeId: uuid("college_id").notNull(),
+	courseId: uuid("course_id").notNull(),
+	semester: smallint().notNull(),
+	academicYear: smallint("academic_year").notNull(),
+	label: text(),
+	isActive: boolean("is_active").default(true).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("routines_college_course_semester_year_idx").using("btree", table.collegeId.asc().nullsLast().op("int2_ops"), table.courseId.asc().nullsLast().op("int2_ops"), table.semester.asc().nullsLast().op("int2_ops"), table.academicYear.asc().nullsLast().op("int2_ops")).where(sql`(is_active = true)`),
+	index("routines_college_id_idx").using("btree", table.collegeId.asc().nullsLast().op("uuid_ops")),
+	foreignKey({
+			columns: [table.collegeId, table.courseId],
+			foreignColumns: [collegeCourses.collegeId, collegeCourses.courseId],
+			name: "routines_college_id_course_id_fkey"
+		}).onUpdate("cascade").onDelete("restrict"),
+	unique("routines_college_course_semester_year_key").on(table.collegeId, table.courseId, table.semester, table.academicYear),
+	check("routines_academic_year_check", sql`academic_year > 2000`),
+	check("routines_semester_check", sql`semester > 0`),
+]);
+
+export const routineHolidays = pgTable("routine_holidays", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	routineId: uuid("routine_id").notNull(),
+	fromDate: date("from_date").notNull(),
+	toDate: date("to_date").notNull(),
+	reason: text(),
+	createdBy: uuid("created_by").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("routine_holidays_routine_date_range_idx").using("gist", sql`routine_id`, sql`daterange(from_date, to_date, '[]'::text)`),
+	foreignKey({
+			columns: [table.createdBy],
+			foreignColumns: [users.id],
+			name: "routine_holidays_created_by_fkey"
+		}).onUpdate("cascade").onDelete("restrict"),
+	foreignKey({
+			columns: [table.routineId],
+			foreignColumns: [routines.id],
+			name: "routine_holidays_routine_id_fkey"
+		}).onUpdate("cascade").onDelete("cascade"),
+	unique("routine_holidays_no_overlap_key").on(table.routineId, table.fromDate, table.toDate),
+	check("routine_holidays_date_range_check", sql`from_date <= to_date`),
+]);
+
+export const routineEntries = pgTable("routine_entries", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	routineId: uuid("routine_id").notNull(),
+	collegeCourseSubjectId: uuid("college_course_subject_id").notNull(),
+	teacherId: uuid("teacher_id"),
+	day: dayOfWeek().notNull(),
+	periodNumber: smallint("period_number").notNull(),
+	startTime: time("start_time").notNull(),
+	endTime: time("end_time").notNull(),
+	roomNumber: text("room_number"),
+}, (table) => [
+	index("routine_entries_college_course_subject_id_idx").using("btree", table.collegeCourseSubjectId.asc().nullsLast().op("uuid_ops")),
+	index("routine_entries_routine_id_day_idx").using("btree", table.routineId.asc().nullsLast().op("uuid_ops"), table.day.asc().nullsLast().op("uuid_ops")),
+	index("routine_entries_routine_id_idx").using("btree", table.routineId.asc().nullsLast().op("uuid_ops")),
+	index("routine_entries_teacher_id_idx").using("btree", table.teacherId.asc().nullsLast().op("uuid_ops")).where(sql`(teacher_id IS NOT NULL)`),
+	foreignKey({
+			columns: [table.collegeCourseSubjectId],
+			foreignColumns: [collegeCourseSubjects.id],
+			name: "routine_entries_college_course_subject_id_fkey"
+		}).onUpdate("cascade").onDelete("restrict"),
+	foreignKey({
+			columns: [table.routineId],
+			foreignColumns: [routines.id],
+			name: "routine_entries_routine_id_fkey"
+		}).onUpdate("cascade").onDelete("cascade"),
+	foreignKey({
+			columns: [table.teacherId],
+			foreignColumns: [teachers.userId],
+			name: "routine_entries_teacher_id_fkey"
+		}).onUpdate("cascade").onDelete("set null"),
+	unique("routine_entries_routine_day_period_key").on(table.routineId, table.day, table.periodNumber),
+	check("routine_entries_period_check", sql`period_number > 0`),
+	check("routine_entries_time_check", sql`start_time < end_time`),
+]);
+
+export const routineOverrides = pgTable("routine_overrides", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	routineEntryId: uuid("routine_entry_id").notNull(),
+	effectiveDate: date("effective_date").notNull(),
+	overrideType: overrideType("override_type").notNull(),
+	teacherId: uuid("teacher_id"),
+	startTime: time("start_time"),
+	endTime: time("end_time"),
+	rescheduledDate: date("rescheduled_date"),
+	rescheduledDay: dayOfWeek("rescheduled_day"),
+	roomNumber: text("room_number"),
+	reason: text(),
+	createdBy: uuid("created_by").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	expiresAt: timestamp("expires_at", { withTimezone: true, mode: 'string' }),
+}, (table) => [
+	index("routine_overrides_effective_date_idx").using("btree", table.effectiveDate.asc().nullsLast().op("date_ops")),
+	index("routine_overrides_expires_at_idx").using("btree", table.expiresAt.asc().nullsLast().op("timestamptz_ops")).where(sql`(expires_at IS NOT NULL)`),
+	index("routine_overrides_rescheduled_date_idx").using("btree", table.rescheduledDate.asc().nullsLast().op("date_ops")).where(sql`(rescheduled_date IS NOT NULL)`),
+	index("routine_overrides_teacher_id_idx").using("btree", table.teacherId.asc().nullsLast().op("uuid_ops")).where(sql`(teacher_id IS NOT NULL)`),
+	foreignKey({
+			columns: [table.createdBy],
+			foreignColumns: [users.id],
+			name: "routine_overrides_created_by_fkey"
+		}).onUpdate("cascade").onDelete("restrict"),
+	foreignKey({
+			columns: [table.routineEntryId],
+			foreignColumns: [routineEntries.id],
+			name: "routine_overrides_routine_entry_id_fkey"
+		}).onUpdate("cascade").onDelete("cascade"),
+	foreignKey({
+			columns: [table.teacherId],
+			foreignColumns: [teachers.userId],
+			name: "routine_overrides_teacher_id_fkey"
+		}).onUpdate("cascade").onDelete("set null"),
+	unique("routine_overrides_entry_date_key").on(table.routineEntryId, table.effectiveDate),
+	check("routine_overrides_reschedule_day_date_check", sql`((rescheduled_date IS NULL) AND (rescheduled_day IS NULL)) OR ((rescheduled_date IS NOT NULL) AND (rescheduled_day IS NOT NULL))`),
+	check("routine_overrides_time_check", sql`((start_time IS NULL) AND (end_time IS NULL)) OR ((start_time IS NOT NULL) AND (end_time IS NOT NULL) AND (start_time < end_time))`),
+]);
+
+export const routineAdhocEntries = pgTable("routine_adhoc_entries", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	routineId: uuid("routine_id").notNull(),
+	collegeCourseSubjectId: uuid("college_course_subject_id"),
+	teacherId: uuid("teacher_id"),
+	date: date().notNull(),
+	day: dayOfWeek().notNull(),
+	periodNumber: smallint("period_number"),
+	startTime: time("start_time").notNull(),
+	endTime: time("end_time").notNull(),
+	roomNumber: text("room_number"),
+	reason: text(),
+	replacesEntryId: uuid("replaces_entry_id"),
+	createdBy: uuid("created_by").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("routine_adhoc_entries_replaces_entry_id_idx").using("btree", table.replacesEntryId.asc().nullsLast().op("uuid_ops")).where(sql`(replaces_entry_id IS NOT NULL)`),
+	index("routine_adhoc_entries_routine_id_date_idx").using("btree", table.routineId.asc().nullsLast().op("date_ops"), table.date.asc().nullsLast().op("date_ops")),
+	index("routine_adhoc_entries_teacher_id_idx").using("btree", table.teacherId.asc().nullsLast().op("uuid_ops")).where(sql`(teacher_id IS NOT NULL)`),
+	index("routine_adhoc_entries_time_range_idx").using("gist", sql`routine_id`, sql`tsrange((date + start_time), (date + end_time), '[)'::text)`),
+	foreignKey({
+			columns: [table.replacesEntryId],
+			foreignColumns: [routineEntries.id],
+			name: "routine_adhoc_entries_replaces_entry_id_fkey"
+		}).onUpdate("cascade").onDelete("set null"),
+	foreignKey({
+			columns: [table.routineId],
+			foreignColumns: [routines.id],
+			name: "routine_adhoc_entries_routine_id_fkey"
+		}).onUpdate("cascade").onDelete("cascade"),
+	foreignKey({
+			columns: [table.teacherId],
+			foreignColumns: [teachers.userId],
+			name: "routine_adhoc_entries_teacher_id_fkey"
+		}).onUpdate("cascade").onDelete("set null"),
+	check("routine_adhoc_entries_time_check", sql`start_time < end_time`),
 ]);
 
 export const teacherSubjects = pgTable("teacher_subjects", {

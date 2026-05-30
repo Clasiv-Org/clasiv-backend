@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { colleges, collegeCourseSubjects, courseSubjects, otpSessions, activationSessions, users, refreshTokens, roles, departments, courses, collegeCourses, enrollments, students, universities, teachers, assignments, assignmentUploadLogs, subjects, teacherSubjects, teacherColleges, permissions, rolePermissions, roleExtendedUsers, teacherDepartments, studentAssignments, collegeAdmins } from "./schema";
+import { colleges, collegeCourseSubjects, courseSubjects, otpSessions, activationSessions, users, refreshTokens, roles, departments, courses, collegeCourses, enrollments, students, universities, teachers, assignments, assignmentUploadLogs, subjects, routines, routineHolidays, routineEntries, routineOverrides, routineAdhocEntries, teacherSubjects, teacherColleges, permissions, rolePermissions, roleExtendedUsers, teacherDepartments, studentAssignments, collegeAdmins } from "./schema";
 
 export const collegeCourseSubjectsRelations = relations(collegeCourseSubjects, ({one, many}) => ({
 	college: one(colleges, {
@@ -11,6 +11,7 @@ export const collegeCourseSubjectsRelations = relations(collegeCourseSubjects, (
 		references: [courseSubjects.id]
 	}),
 	assignments: many(assignments),
+	routineEntries: many(routineEntries),
 	teacherSubjects: many(teacherSubjects),
 }));
 
@@ -67,6 +68,8 @@ export const usersRelations = relations(users, ({one, many}) => ({
 	assignments: many(assignments),
 	students: many(students),
 	otpSessions: many(otpSessions),
+	routineHolidays: many(routineHolidays),
+	routineOverrides: many(routineOverrides),
 	roleExtendedUsers: many(roleExtendedUsers),
 	collegeAdmins_createdBy: many(collegeAdmins, {
 		relationName: "collegeAdmins_createdBy_users_id"
@@ -140,6 +143,7 @@ export const enrollmentsRelations = relations(enrollments, ({one}) => ({
 
 export const collegeCoursesRelations = relations(collegeCourses, ({one, many}) => ({
 	enrollments: many(enrollments),
+	routines: many(routines),
 	college: one(colleges, {
 		fields: [collegeCourses.collegeId],
 		references: [colleges.id]
@@ -171,6 +175,9 @@ export const teachersRelations = relations(teachers, ({one, many}) => ({
 		fields: [teachers.userId],
 		references: [users.id]
 	}),
+	routineEntries: many(routineEntries),
+	routineOverrides: many(routineOverrides),
+	routineAdhocEntries: many(routineAdhocEntries),
 	teacherSubjects: many(teacherSubjects),
 	teacherColleges: many(teacherColleges),
 	teacherDepartments: many(teacherDepartments),
@@ -202,6 +209,74 @@ export const assignmentsRelations = relations(assignments, ({one, many}) => ({
 
 export const subjectsRelations = relations(subjects, ({many}) => ({
 	courseSubjects: many(courseSubjects),
+}));
+
+export const routinesRelations = relations(routines, ({one, many}) => ({
+	collegeCourse: one(collegeCourses, {
+		fields: [routines.collegeId],
+		references: [collegeCourses.collegeId]
+	}),
+	routineHolidays: many(routineHolidays),
+	routineEntries: many(routineEntries),
+	routineAdhocEntries: many(routineAdhocEntries),
+}));
+
+export const routineHolidaysRelations = relations(routineHolidays, ({one}) => ({
+	user: one(users, {
+		fields: [routineHolidays.createdBy],
+		references: [users.id]
+	}),
+	routine: one(routines, {
+		fields: [routineHolidays.routineId],
+		references: [routines.id]
+	}),
+}));
+
+export const routineEntriesRelations = relations(routineEntries, ({one, many}) => ({
+	collegeCourseSubject: one(collegeCourseSubjects, {
+		fields: [routineEntries.collegeCourseSubjectId],
+		references: [collegeCourseSubjects.id]
+	}),
+	routine: one(routines, {
+		fields: [routineEntries.routineId],
+		references: [routines.id]
+	}),
+	teacher: one(teachers, {
+		fields: [routineEntries.teacherId],
+		references: [teachers.userId]
+	}),
+	routineOverrides: many(routineOverrides),
+	routineAdhocEntries: many(routineAdhocEntries),
+}));
+
+export const routineOverridesRelations = relations(routineOverrides, ({one}) => ({
+	user: one(users, {
+		fields: [routineOverrides.createdBy],
+		references: [users.id]
+	}),
+	routineEntry: one(routineEntries, {
+		fields: [routineOverrides.routineEntryId],
+		references: [routineEntries.id]
+	}),
+	teacher: one(teachers, {
+		fields: [routineOverrides.teacherId],
+		references: [teachers.userId]
+	}),
+}));
+
+export const routineAdhocEntriesRelations = relations(routineAdhocEntries, ({one}) => ({
+	routineEntry: one(routineEntries, {
+		fields: [routineAdhocEntries.replacesEntryId],
+		references: [routineEntries.id]
+	}),
+	routine: one(routines, {
+		fields: [routineAdhocEntries.routineId],
+		references: [routines.id]
+	}),
+	teacher: one(teachers, {
+		fields: [routineAdhocEntries.teacherId],
+		references: [teachers.userId]
+	}),
 }));
 
 export const teacherSubjectsRelations = relations(teacherSubjects, ({one}) => ({
