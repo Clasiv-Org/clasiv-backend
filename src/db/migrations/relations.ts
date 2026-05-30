@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { colleges, collegeCourseSubjects, courseSubjects, otpSessions, activationSessions, users, refreshTokens, roles, departments, courses, collegeCourses, enrollments, students, universities, teachers, assignments, assignmentUploadLogs, subjects, teacherSubjects, teacherColleges, permissions, rolePermissions, roleExtendedUsers, teacherDepartments, studentAssignments } from "./schema";
+import { colleges, collegeCourseSubjects, courseSubjects, otpSessions, activationSessions, users, refreshTokens, roles, departments, courses, collegeCourses, enrollments, students, universities, teachers, assignments, assignmentUploadLogs, subjects, teacherSubjects, teacherColleges, permissions, rolePermissions, roleExtendedUsers, teacherDepartments, studentAssignments, collegeAdmins } from "./schema";
 
 export const collegeCourseSubjectsRelations = relations(collegeCourseSubjects, ({one, many}) => ({
 	college: one(colleges, {
@@ -22,6 +22,7 @@ export const collegesRelations = relations(colleges, ({one, many}) => ({
 	}),
 	teacherColleges: many(teacherColleges),
 	collegeCourses: many(collegeCourses),
+	collegeAdmins: many(collegeAdmins),
 }));
 
 export const courseSubjectsRelations = relations(courseSubjects, ({one, many}) => ({
@@ -67,9 +68,26 @@ export const usersRelations = relations(users, ({one, many}) => ({
 	students: many(students),
 	otpSessions: many(otpSessions),
 	roleExtendedUsers: many(roleExtendedUsers),
+	collegeAdmins_createdBy: many(collegeAdmins, {
+		relationName: "collegeAdmins_createdBy_users_id"
+	}),
+	collegeAdmins_deactivatedBy: many(collegeAdmins, {
+		relationName: "collegeAdmins_deactivatedBy_users_id"
+	}),
+	collegeAdmins_userId: many(collegeAdmins, {
+		relationName: "collegeAdmins_userId_users_id"
+	}),
 }));
 
-export const refreshTokensRelations = relations(refreshTokens, ({one}) => ({
+export const refreshTokensRelations = relations(refreshTokens, ({one, many}) => ({
+	refreshToken: one(refreshTokens, {
+		fields: [refreshTokens.previousTokenId],
+		references: [refreshTokens.id],
+		relationName: "refreshTokens_previousTokenId_refreshTokens_id"
+	}),
+	refreshTokens: many(refreshTokens, {
+		relationName: "refreshTokens_previousTokenId_refreshTokens_id"
+	}),
 	user: one(users, {
 		fields: [refreshTokens.userId],
 		references: [users.id]
@@ -253,5 +271,27 @@ export const studentAssignmentsRelations = relations(studentAssignments, ({one})
 	student: one(students, {
 		fields: [studentAssignments.studentId],
 		references: [students.userId]
+	}),
+}));
+
+export const collegeAdminsRelations = relations(collegeAdmins, ({one}) => ({
+	college: one(colleges, {
+		fields: [collegeAdmins.collegeId],
+		references: [colleges.id]
+	}),
+	user_createdBy: one(users, {
+		fields: [collegeAdmins.createdBy],
+		references: [users.id],
+		relationName: "collegeAdmins_createdBy_users_id"
+	}),
+	user_deactivatedBy: one(users, {
+		fields: [collegeAdmins.deactivatedBy],
+		references: [users.id],
+		relationName: "collegeAdmins_deactivatedBy_users_id"
+	}),
+	user_userId: one(users, {
+		fields: [collegeAdmins.userId],
+		references: [users.id],
+		relationName: "collegeAdmins_userId_users_id"
 	}),
 }));

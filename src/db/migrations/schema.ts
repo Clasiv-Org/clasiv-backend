@@ -1,7 +1,10 @@
-import { pgTable, foreignKey, unique, uuid, boolean, check, text, timestamp, serial, smallint, bigint, date, inet, primaryKey, integer, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, foreignKey, unique, uuid, boolean, check, text, timestamp, serial, smallint, index, bigint, date, inet, primaryKey, integer, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const activationStatus = pgEnum("activation_status", ['initiated', 'otp_sent', 'otp_verified', 'completed', 'expired'])
+export const genderType = pgEnum("gender_type", ['male', 'female', 'non_binary', 'prefer_not_to_say'])
+export const otpStatus = pgEnum("otp_status", ['used', 'pending', 'expired'])
+export const userStatus = pgEnum("user_status", ['unactivated', 'active', 'inactive', 'suspended', 'banned'])
 
 
 export const collegeCourseSubjects = pgTable("college_course_subjects", {
@@ -63,7 +66,13 @@ export const refreshTokens = pgTable("refresh_tokens", {
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	ipAddress: text("ip_address"),
 	userAgent: text("user_agent"),
+	previousTokenId: uuid("previous_token_id"),
 }, (table) => [
+	foreignKey({
+			columns: [table.previousTokenId],
+			foreignColumns: [table.id],
+			name: "refresh_tokens_previous_token_id_fkey"
+		}).onUpdate("cascade").onDelete("set null"),
 	foreignKey({
 			columns: [table.userId],
 			foreignColumns: [users.id],
@@ -95,11 +104,13 @@ export const users = pgTable("users", {
 	emailId: text("email_id"),
 	phoneNo: text("phone_no"),
 	activatedAt: timestamp("activated_at", { withTimezone: true, mode: 'string' }),
-	modifiedAt: timestamp("modified_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 	lastLoginAt: timestamp("last_login_at", { withTimezone: true, mode: 'string' }),
 	baseRole: smallint("base_role").notNull(),
-	userName: text("user_name"),
+	userName: text("user_name").notNull(),
 	passwordHash: text("password_hash"),
+	gender: genderType().default('prefer_not_to_say').notNull(),
+	status: userStatus().default('unactivated').notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.baseRole],
@@ -205,6 +216,7 @@ export const assignmentUploadLogs = pgTable("assignment_upload_logs", {
 	fileSize: bigint("file_size", { mode: "number" }),
 	etag: text(),
 }, (table) => [
+	index("assignment_upload_logs_assignment_id_student_id_uploaded_at_idx").using("btree", table.assignmentId.asc().nullsLast().op("uuid_ops"), table.studentId.asc().nullsLast().op("timestamptz_ops"), table.uploadedAt.desc().nullsFirst().op("uuid_ops")),
 	foreignKey({
 			columns: [table.assignmentId],
 			foreignColumns: [assignments.id],
@@ -460,4 +472,37 @@ export const studentAssignments = pgTable("student_assignments", {
 		}).onUpdate("cascade").onDelete("cascade"),
 	primaryKey({ columns: [table.assignmentId, table.studentId], name: "student_assignments_pkey"}),
 	check("student_assignments_status_check", sql`status = ANY (ARRAY['pending'::text, 'submitted'::text])`),
+]);
+
+export const collegeAdmins = pgTable("college_admins", {
+	userId: uuid("user_id").notNull(),
+	collegeId: uuid("college_id").notNull(),
+	createdBy: uuid("created_by").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	isActive: boolean("is_active").default(true).notNull(),
+	deactivatedAt: timestamp("deactivated_at", { withTimezone: true, mode: 'string' }),
+	deactivatedBy: uuid("deactivated_by"),
+}, (table) => [
+	foreignKey({
+			columns: [table.collegeId],
+			foreignColumns: [colleges.id],
+			name: "college_admins_college_id_fkey"
+		}).onUpdate("cascade").onDelete("restrict"),
+	foreignKey({
+			columns: [table.createdBy],
+			foreignColumns: [users.id],
+			name: "college_admins_created_by_fkey"
+		}).onUpdate("cascade").onDelete("restrict"),
+	foreignKey({
+			columns: [table.deactivatedBy],
+			foreignColumns: [users.id],
+			name: "college_admins_deactivated_by_fkey"
+		}).onUpdate("cascade").onDelete("restrict"),
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "college_admins_user_id_fkey"
+		}).onUpdate("cascade").onDelete("restrict"),
+	primaryKey({ columns: [table.userId, table.collegeId], name: "college_admins_pkey"}),
 ]);
