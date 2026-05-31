@@ -679,22 +679,37 @@ router.post("/login",
  * /auth/refresh:
  *   post:
  *     tags: [Auth]
- *     summary: Rotate Refresh Token and return new Access Token
+ *     summary: Rotate refresh token and return new access token
  *     security: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: true
- *             properties:
- *               refreshToken:
- *                 type: string
- *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+ *     parameters:
+ *       - in: header
+ *         name: X-Client-Type
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [mobile, web]
+ *         description: Client type — determines where refresh token is read from
+ *       - in: header
+ *         name: X-Refresh-Token
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Required when X-Client-Type is mobile
+ *       - in: cookie
+ *         name: refresh_token
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Required when X-Client-Type is web
  *     responses:
  *       200:
- *         description: Tokens have been successfully rotated
+ *         description: Tokens rotated successfully
+ *         headers:
+ *           Set-Cookie:
+ *             description: New refresh token cookie (web only)
+ *             schema:
+ *               type: string
+ *               example: refresh_token=eyJ...; HttpOnly; Secure; SameSite=Strict
  *         content:
  *           application/json:
  *             schema:
@@ -706,43 +721,67 @@ router.post("/login",
  *                 statusCode:
  *                   type: number
  *                   example: 200
- *                 tokens:
- *                   $ref: '#/components/schemas/Token'
+ *                 accessToken:
+ *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+ *                 refreshToken:
+ *                   type: string
+ *                   description: Mobile only — not returned for web
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
  *                 user:
  *                   $ref: '#/components/schemas/UserProfileSafe'
- *       400:
- *         description: Validation error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/AppError'
- *             example:
- *               message: Validation error
- *               statusCode: 400
  *       401:
- *         description: Invalid refresh token
+ *         description: Invalid, expired, revoked or reused refresh token
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/AppError'
- *             example:
- *               message: Invalid refresh token
- *               statusCode: 401
- *       404:
- *         description: User or refresh token session not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/AppError'
+ *               $ref: '#/components/schemas/ErrorResponse'
  *             examples:
- *               user_not_found:
+ *               no_refresh_token:
  *                 value:
- *                   message: User not found
- *                   statusCode: 404
- *               refresh_token_session_not_found:
+ *                   message: No refresh token
+ *                   statusCode: 401
+ *                   errorCode: NO_REFRESH_TOKEN
+ *               invalid_token:
  *                 value:
- *                   message: Refresh token session not found
- *                   statusCode: 404
+ *                   message: Invalid refresh token
+ *                   statusCode: 401
+ *                   errorCode: INVALID_TOKEN
+ *               token_expired:
+ *                 value:
+ *                   message: Token expired
+ *                   statusCode: 401
+ *                   errorCode: TOKEN_EXPIRED
+ *               token_revoked:
+ *                 value:
+ *                   message: Refresh token revoked
+ *                   statusCode: 401
+ *                   errorCode: TOKEN_REVOKED
+ *               token_reuse:
+ *                 value:
+ *                   message: Token reuse detected
+ *                   statusCode: 401
+ *                   errorCode: TOKEN_REUSE_DETECTED
+ *       404:
+ *         description: Refresh token session not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: Refresh token session not found
+ *               statusCode: 404
+ *               errorCode: TOKEN_NOT_FOUND
+ *       500:
+ *         description: Internal error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: Something went wrong
+ *               statusCode: 500
+ *               errorCode: INTERNAL_ERROR
  */
 router.post("/refresh", 
 	refreshAuthentication,
