@@ -1,5 +1,6 @@
 import { Router } from "express";
 import validator from "@/middleware/global.validator";
+import refreshAuthentication from "@/middleware/refresh.authentication";
 import * as authController from "@/modules/auth/auth.controller";
 import { 
 	ActivationInitiateSchema, 
@@ -744,6 +745,7 @@ router.post("/login",
  *                   statusCode: 404
  */
 router.post("/refresh", 
+	refreshAuthentication,
 	authController.refreshTokens
 );
 

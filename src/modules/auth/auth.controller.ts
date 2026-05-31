@@ -170,8 +170,9 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 */  
 export const refreshTokens = async (req: Request, res: Response, next: NextFunction) => {
 	try {  
-		const { token }  = req.body;  
-		const { user, tokens } = await authService.refreshTokens(token);
+		const token  = req.headers["x-refresh-token"] as string;
+		const tokenData = req.refreshToken; 
+		const { user, tokens } = await authService.refreshTokens(token, tokenData!);
 		res.status(200).json({  
 			message: "Token refreshed successfully!", 
             statusCode: 200,

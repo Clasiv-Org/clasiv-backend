@@ -26,6 +26,7 @@ import type {
     ActivationOtpVerifyPayload,
     ActivationCompletePayload,
     LoginPayload,
+    RefreshTokenPayload,
 } from "@/types/auth";
 import { handleAuthRPCError } from "@/mappers/errors";
 
@@ -274,10 +275,8 @@ export const login = async (loginData: LoginPayload) => {
     };
 };
 
-export const refreshTokens = async (token: string) => {
-    const decode = verifyRefreshToken(token);
-
-    const refreshTokenSession = await authRepository.getRefreshToken(decode.id);
+export const refreshTokens = async (token: string, tokenData: RefreshTokenPayload) => {
+    const refreshTokenSession = await authRepository.getRefreshToken(tokenData.id);
     if(!refreshTokenSession) throw new AppError("Refresh token session not found", 404);
     if(refreshTokenSession.isRevoked) throw new AppError("Refresh token revoked", 401);
     if(new Date(refreshTokenSession.expiresAt) < new Date()) throw new AppError("Refresh token expired", 401);
@@ -285,7 +284,7 @@ export const refreshTokens = async (token: string) => {
     const isValidToken = verifyTokenHash(token, refreshTokenSession.tokenHash);
     if(!isValidToken) throw new AppError("Invalid refresh token", 401);
 
-    const newRefreshToken = await authRepository.createRefreshToken(decode.userId, "pending", decode.id);
+    const newRefreshToken = await authRepository.createRefreshToken(tokenData.userId, "pending", tokenData.id);
     if(!newRefreshToken) throw new AppError("Failed to create refresh token", 500);
 
     const refreshToken = generateRefreshToken({
