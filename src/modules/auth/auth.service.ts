@@ -32,7 +32,7 @@ import { handleAuthRPCError } from "@/mappers/errors";
 export const activationInitiate = async (activationData: ActivationInitiatePayload) => {
 	const user = await authRepository.getUserByUserName(activationData.userName);
 	if(!user) throw new AppError("User not found", 404);
-	if(user.activatedAt) throw new AppError("User is already activated", 409);
+	if(user.activatedAt && user.status === "active") throw new AppError("User is already activated", 409);
 
 	if(!user.passwordHash) throw new AppError("User has no password set", 500);
 	const isValidPassword = await verifyPassword(activationData.password, user.passwordHash);
@@ -237,7 +237,7 @@ export const login = async (loginData: LoginPayload) => {
         ? await authRepository.getUserByUserName(loginData.userName)
         : await authRepository.getUserByEmail(loginData.emailId!);
     if(!user) throw new AppError("User not found", 404);
-    if(!user.activatedAt) throw new AppError("User is not activated", 403);
+    if(!user.activatedAt && user.status === "unactivated") throw new AppError("User is not activated", 403);
     if(!user.passwordHash) throw new AppError("User has no password set", 500);
 
     const isValidPassword = await verifyPassword(loginData.password, user.passwordHash);
@@ -285,7 +285,7 @@ export const refreshTokens = async (token: string) => {
     const isValidToken = verifyTokenHash(token, refreshTokenSession.tokenHash);
     if(!isValidToken) throw new AppError("Invalid refresh token", 401);
 
-    const newRefreshToken = await authRepository.createRefreshToken(decode.userId, "pending");
+    const newRefreshToken = await authRepository.createRefreshToken(decode.userId, "pending", decode.id);
     if(!newRefreshToken) throw new AppError("Failed to create refresh token", 500);
 
     const refreshToken = generateRefreshToken({
@@ -295,7 +295,6 @@ export const refreshTokens = async (token: string) => {
     const refreshTokenHash = hashToken(refreshToken);
 
     const { success, error, data: user } = await authRepository.updateRefreshToken(
-        decode.id,
         newRefreshToken.id,
         refreshTokenHash
     );
