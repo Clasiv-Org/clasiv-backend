@@ -7,6 +7,7 @@ import jwt, {
 	TokenExpiredError, 
 } from "jsonwebtoken";
 import { createHash } from "crypto";
+import { AppError } from "@/utils/error";
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET as string;
@@ -42,12 +43,12 @@ const verifyToken = <T>(token: string, secret: string) => {
 		}) as T;
 	} catch (error) {
 		if(error instanceof TokenExpiredError){
-            throw new Error("Token expired");
+            throw new AppError("Token expired", 401);
 		}
 		if(error instanceof JsonWebTokenError){
-            throw new Error(error.message);
+            throw new AppError("Invalid token", 401);
         }
-		throw new Error("Unknown Error");
+		throw new AppError("Unknown error", 500);
 	}
 }
 

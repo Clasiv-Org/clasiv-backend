@@ -10,6 +10,7 @@ declare global {
     namespace Express {
         interface Request {
             user?: AccessTokenPayload;
+            refreshToken?: RefreshTokenPayload;
 			pagination?: BaseGetUser;
 		}
     }
