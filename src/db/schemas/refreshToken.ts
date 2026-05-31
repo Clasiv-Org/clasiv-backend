@@ -18,11 +18,16 @@ export const refreshTokens = pgTable("refresh_tokens", {
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	ipAddress: text("ip_address"),
 	userAgent: text("user_agent"),
+	previousTokenId: uuid("previous_token_id"),
 }, (table) => [
+	foreignKey({
+			columns: [table.previousTokenId],
+			foreignColumns: [table.id],
+			name: "refresh_tokens_previous_token_id_fkey"
+		}).onUpdate("cascade").onDelete("set null"),
 	foreignKey({
 			columns: [table.userId],
 			foreignColumns: [users.id],
 			name: "refresh_tokens_user_id_fkey"
 		}).onUpdate("cascade").onDelete("cascade"),
 ]);
-
