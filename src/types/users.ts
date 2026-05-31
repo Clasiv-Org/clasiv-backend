@@ -7,80 +7,107 @@ import {
 } from "@/types/roles";
 import { DepartmentAbbrvEnum } from "@/types/department";
 import { RPCResponseSchema } from "@/types/db";
-  
-const AbbrEntitySchema = z.object({
-	name: z.string(),
-	abbrv: z.string(),
+ 
+const GenderEnum = z.enum(['male', 'female', 'non_binary', 'prefer_not_to_say']);
+const StatusEnum = z.enum(['unactivated', 'active', 'inactive', 'suspended', 'banned']);
+
+const AbbrvEntitySchema = z.object({
+    id:    z.string().uuid(),
+    name:  z.string(),
+    abbrv: z.string(),
 });
 
 const HodSchema = z.object({
-	name: z.string(),
-	abbrv: z.string(),
+    name:     z.string(),
+    abbrv:    z.string(),
+    userName: z.string(),
 });
 
 const EnrollmentSchema = z.object({
-	university: AbbrEntitySchema,
-	college: AbbrEntitySchema,
-	department: AbbrEntitySchema,
-	course: AbbrEntitySchema,
-	hod: HodSchema.nullable(),
-	admissionYear: z.number(),
-	graduationYear: z.number().nullable(),
-	currentSemester: z.number(),
-	rollNo: z.string(),
-	regNo: z.string(),
+    id:              z.string().uuid(),
+    university:      AbbrvEntitySchema,
+    college:         AbbrvEntitySchema,
+    department:      AbbrvEntitySchema,
+    course:          AbbrvEntitySchema,
+    hod:             HodSchema.nullable(),
+    admissionYear:   z.number(),
+    graduationYear:  z.number().nullable(),
+    currentSemester: z.number(),
+    rollNo:          z.string(),
+    regNo:           z.string(),
 });
 
 const StudentDataSchema = z.object({
-	dob: z.string().nullable(),
-	enrollments: z.array(EnrollmentSchema),
+    dob:         z.string().nullable(),
+    enrollments: z.array(EnrollmentSchema),
 });
 
 const StudentProfileSchema = z.object({
-	type: z.literal('student'),
-	data: StudentDataSchema,
+    type: z.literal('student'),
+    data: StudentDataSchema,
 });
 
 const DepartmentSchema = z.object({
-	name: z.string(),
-	abbrv: z.string(),
-	isHod: z.boolean(),
+    id:    z.string().uuid(),
+    name:  z.string(),
+    abbrv: z.string(),
+    isHod: z.boolean(),
 });
 
 const EmploymentSchema = z.object({
-	university: AbbrEntitySchema,
-	college: AbbrEntitySchema,
-	departments: z.array(DepartmentSchema),
+    university:  AbbrvEntitySchema,
+    college:     AbbrvEntitySchema,
+    departments: z.array(DepartmentSchema),
 });
 
 const TeacherDataSchema = z.object({
-	abbrv: z.string(),
-	employments: z.array(EmploymentSchema),
+    abbrv:       z.string(),
+    employments: z.array(EmploymentSchema),
 });
 
 const TeacherProfileSchema = z.object({
-	type: z.literal('teacher'),
-	data: TeacherDataSchema,
+    type: z.literal('teacher'),
+    data: TeacherDataSchema,
+});
+
+const AdminDataSchema = z.object({
+    college:    AbbrvEntitySchema,
+    university: AbbrvEntitySchema,
+    assignedAt: z.string(),
+});
+
+const AdminProfileSchema = z.object({
+    type: z.literal('admin'),
+    data: AdminDataSchema,
+});
+
+const SystemAdminProfileSchema = z.object({
+    type: z.literal('system_admin'),
+    data: z.null(),
 });
 
 export const UserProfileSchema = z.object({
-	id: z.string().uuid(),
-	userName: z.string().nullable(),
-	fullName: z.string(),
-	emailId: z.string().nullable(),
-	phoneNo: z.string().nullable(),
-	passwordHash: z.string().nullable(),
-	baseRole: z.string(),
-	extentionRoles: z.array(z.string()),
-	createdAt: z.string().nullable(),
-	modifiedAt: z.string().nullable(),
-	activatedAt: z.string().nullable(),
-	lastLoginAt: z.string().nullable(),
-	profile: z.discriminatedUnion('type', [
-		StudentProfileSchema,
-		TeacherProfileSchema,
-	]),
-	permissions: z.array(z.string()),
+    id:             z.string().uuid(),
+    userName:       z.string().nullable(),
+    fullName:       z.string(),
+    emailId:        z.string().nullable(),
+    phoneNo:        z.string().nullable(),
+    passwordHash:   z.string().nullable(),
+    gender:         GenderEnum,
+    status:         StatusEnum,
+    baseRole:       z.string(),
+    extentionRoles: z.array(z.string()),
+    createdAt:      z.string().nullable(),
+    updatedAt:      z.string().nullable(),
+    activatedAt:    z.string().nullable(),
+    lastLoginAt:    z.string().nullable(),
+    profile: z.discriminatedUnion('type', [
+        StudentProfileSchema,
+        TeacherProfileSchema,
+        AdminProfileSchema,
+        SystemAdminProfileSchema,
+    ]),
+    permissions: z.array(z.string()),
 });
 
 export const UserProfileSafeSchema = UserProfileSchema.omit({ 
@@ -171,12 +198,14 @@ export const UpdateSelfRPCSchema = RPCResponseSchema.extend({
     data: UserProfileSchema.nullable(),
 });
 
-export type UserProfile		= z.infer<typeof UserProfileSchema>;
-export type UserProfileSafe	= z.infer<typeof UserProfileSafeSchema>;
-export type StudentProfile	= z.infer<typeof StudentProfileSchema>;
-export type TeacherProfile	= z.infer<typeof TeacherProfileSchema>;
-export type Enrollment		= z.infer<typeof EnrollmentSchema>;
-export type Employment		= z.infer<typeof EmploymentSchema>;
+export type UserProfile			= z.infer<typeof UserProfileSchema>;
+export type UserProfileSafe		= z.infer<typeof UserProfileSafeSchema>;
+export type SystemAdminProfile	= z.infer<typeof SystemAdminProfileSchema>;
+export type AdminProfile		= z.infer<typeof AdminProfileSchema>;
+export type StudentProfile		= z.infer<typeof StudentProfileSchema>;
+export type TeacherProfile		= z.infer<typeof TeacherProfileSchema>;
+export type Enrollment			= z.infer<typeof EnrollmentSchema>;
+export type Employment			= z.infer<typeof EmploymentSchema>;
 
 export type User			= InferSelectModel<typeof users>;
 export type UserSafe		= z.infer<typeof UserSafeSchema>;
