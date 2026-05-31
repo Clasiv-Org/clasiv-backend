@@ -170,7 +170,12 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 */  
 export const refreshTokens = async (req: Request, res: Response, next: NextFunction) => {
 	try {  
-		const token  = req.headers["x-refresh-token"] as string;
+		const clientType = req.headers['x-client-type'];
+
+		const token = clientType === "mobile"
+			? req.headers["x-refresh-token"] as string
+            : req.cookies?.refresh_token;
+
 		const tokenData = req.refreshToken; 
 		const { user, tokens } = await authService.refreshTokens(token, tokenData!);
 		res.status(200).json({  
@@ -182,4 +187,28 @@ export const refreshTokens = async (req: Request, res: Response, next: NextFunct
 	} catch (error) {
 		next(error);
 	}
+}
+
+export const logout = async (req: Request, res: Response, next: NextFunction) => {
+	try {
+		const clientType = req.headers['x-client-type'];
+
+		const token = clientType === "mobile"
+			? req.headers["x-refresh-token"] as string
+            : req.cookies?.refresh_token;
+
+		const tokenData = req.refreshToken;
+		await authService.logout(token, tokenData!);
+
+		if (clientType !== "mobile") {
+			res.clearCookie("refresh_token");
+		}
+
+		res.status(200).json({ 
+			message: "Logout successful!",
+			statusCode: 200
+		});
+    } catch (error) {
+        next(error);
+    }
 }

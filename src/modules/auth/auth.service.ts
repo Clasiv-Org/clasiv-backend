@@ -1,6 +1,5 @@
 import { 
 	generateRefreshToken,
-	verifyRefreshToken,
 	generateAccessToken,
     hashToken,
     verifyTokenHash
@@ -278,7 +277,6 @@ export const login = async (loginData: LoginPayload) => {
 export const refreshTokens = async (token: string, tokenData: RefreshTokenPayload) => {
     const refreshTokenSession = await authRepository.getRefreshToken(tokenData.id);
     if(!refreshTokenSession) throw new AppError("Refresh token session not found", 404);
-    if(refreshTokenSession.isRevoked) throw new AppError("Refresh token revoked", 401);
     if(new Date(refreshTokenSession.expiresAt) < new Date()) throw new AppError("Refresh token expired", 401);
 
     const isValidToken = verifyTokenHash(token, refreshTokenSession.tokenHash);
@@ -316,3 +314,18 @@ export const refreshTokens = async (token: string, tokenData: RefreshTokenPayloa
     };
 }
 
+export const logout = async (token: string, tokenData: RefreshTokenPayload) => {
+    const refreshTokenSession = await authRepository.getRefreshToken(tokenData.id);
+    if(!refreshTokenSession) throw new AppError("Refresh token session not found", 404);
+    if(refreshTokenSession.isRevoked) {
+		await authRepository.revokeAllRefreshTokens(tokenData.userId);
+		throw new AppError("Token reuse detected", 401);
+	}
+    if(new Date(refreshTokenSession.expiresAt) < new Date()) throw new AppError("Refresh token expired", 401);
+
+    const isValidToken = verifyTokenHash(token, refreshTokenSession.tokenHash);
+    if(!isValidToken) throw new AppError("Invalid refresh token", 401);
+
+	const revoked = await authRepository.revokeRefreshToken(tokenData.id);
+    if(!revoked?.isRevoked) throw new AppError("Failed to revoke refresh token", 500);
+}

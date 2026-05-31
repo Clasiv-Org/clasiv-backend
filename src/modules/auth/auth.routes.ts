@@ -749,4 +749,62 @@ router.post("/refresh",
 	authController.refreshTokens
 );
 
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Logout the current session
+ *     parameters:
+ *       - in: header
+ *         name: X-Client-Type
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [mobile, web]
+ *         description: Client type — determines where refresh token is read from
+ *       - in: header
+ *         name: X-Refresh-Token
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Required when X-Client-Type is mobile
+ *       - in: cookie
+ *         name: refresh_token
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Required when X-Client-Type is web
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Logout successful!
+ *                 statusCode:
+ *                   type: number
+ *                   example: 200
+ *       401:
+ *         description: Invalid, expired or revoked refresh token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Failed to revoke refresh token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post("/logout", 
+    refreshAuthentication,
+	authController.logout
+);
+
 export default router;

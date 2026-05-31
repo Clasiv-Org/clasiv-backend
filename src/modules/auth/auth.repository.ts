@@ -182,3 +182,28 @@ export const updateRefreshToken = async (
     return parsed;
 }
 
+export const revokeRefreshToken = async (id: string) => {
+    const result = await db
+        .update(refreshTokens)
+        .set({
+            isRevoked: true,
+			updatedAt: new Date().toISOString()
+        })
+        .where(eq(refreshTokens.id, id))
+        .returning();
+
+    return result[0] ?? null;
+}
+
+export const revokeAllRefreshTokens = async (userId: string) => {
+    const result = await db
+        .update(refreshTokens)
+        .set({
+            isRevoked: true,
+            updatedAt: new Date().toISOString()
+        })
+        .where(eq(refreshTokens.userId, userId))
+        .returning();
+
+    return result[0] ?? null;
+}
